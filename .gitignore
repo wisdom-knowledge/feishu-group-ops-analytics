@@ -1,0 +1,9 @@
+.env
+groups.json
+people.json
+project-events.json
+data/
+node_modules/
+output/
+.playwright-cli/
+.DS_Store

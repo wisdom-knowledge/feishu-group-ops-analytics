@@ -1,0 +1,16 @@
+{
+  "oc_example_external_project": {
+    "enabled": true,
+    "external": true,
+    "projectId": "project-example-external",
+    "projectName": "示例外部项目群",
+    "chatName": "示例外部项目群"
+  },
+  "oc_example_internal_project": {
+    "enabled": true,
+    "external": false,
+    "projectId": "project-example-internal",
+    "projectName": "示例内部协作群",
+    "chatName": "示例内部协作群"
+  }
+}

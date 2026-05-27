@@ -1,0 +1,26 @@
+{
+  "name": "feishu-group-analysis",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "node src/group-analysis.js sync",
+    "backfill": "node src/group-analysis.js backfill",
+    "report": "node src/group-analysis.js report",
+    "db:import": "node src/group-analysis.js db-import",
+    "db:status": "node src/group-analysis.js db-status",
+    "dashboard": "node src/group-analysis.js dashboard --write",
+    "ai:analyze": "node src/group-analysis.js ai-analyze --write",
+    "serve": "node src/group-analysis.js serve",
+    "groups:discover": "node src/group-analysis.js groups-discover",
+    "cron:install": "node src/group-analysis.js cron-install",
+    "cron:remove": "node src/group-analysis.js cron-remove",
+    "users:resolve": "node src/group-analysis.js users-resolve --write",
+    "check": "node --check src/group-analysis.js && node --check src/verify-requirements.js",
+    "verify:data": "node src/verify-data-integrity.js",
+    "verify": "npm run dashboard && node src/verify-requirements.js && npm run verify:data"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.138"
+  }
+}

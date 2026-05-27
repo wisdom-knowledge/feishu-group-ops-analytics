@@ -1,0 +1,26 @@
+{
+  "ou_xxx_internal_user_id": {
+    "name": "内部运营A",
+    "team": "运营",
+    "role": "internal",
+    "isInternal": true
+  },
+  "ou_xxx_pm_user_id": {
+    "name": "项目PM",
+    "team": "项目管理",
+    "role": "pm",
+    "isInternal": true
+  },
+  "cli_xxx_bot_id": {
+    "name": "项目AI机器人",
+    "team": "AI",
+    "role": "bot",
+    "isInternal": true
+  },
+  "ou_xxx_external_user_id": {
+    "name": "外部专家或用户",
+    "team": "外部",
+    "role": "expert",
+    "isInternal": false
+  }
+}

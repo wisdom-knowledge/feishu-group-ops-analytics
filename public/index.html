@@ -1,0 +1,4790 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>群运营分析工作台</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23141b22'/%3E%3Cpath d='M16 42V20h8v22h-8Zm12 0V12h8v30h-8Zm12 0V28h8v14h-8Z' fill='%230b7568'/%3E%3C/svg%3E" />
+    <style>
+      :root {
+        --bg: #f5f6f7;
+        --paper: #ffffff;
+        --paper-soft: #f8f9fa;
+        --ink: #20242a;
+        --muted: #6b7280;
+        --faint: #a1a8b0;
+        --line: #dfe3e8;
+        --line-strong: #c7cdd4;
+        --real: #08765f;
+        --real-soft: #e8f5f1;
+        --ai: #475569;
+        --ai-soft: #eef2f6;
+        --warn: #9a5b00;
+        --warn-soft: #fff4dd;
+        --bad: #a33a32;
+        --bad-soft: #fae9e7;
+        --black: #15191f;
+        --radius: 8px;
+        --shadow: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background: var(--bg);
+        font-family: "Avenir Next", "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        font-size: 14px;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button,
+      select {
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        cursor: pointer;
+      }
+
+      .action-btn {
+        min-height: 30px;
+        padding: 0 10px;
+        background: var(--real-soft);
+        color: var(--real);
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .action-btn.secondary {
+        background: var(--paper-soft);
+        color: var(--muted);
+      }
+
+      .action-btn.is-busy,
+      button.is-busy {
+        opacity: 0.72;
+      }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid rgba(35, 79, 125, 0.88);
+        outline-offset: 2px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 30px;
+        line-height: 1.1;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        font-size: 18px;
+      }
+
+      h3 {
+        font-size: 14px;
+      }
+
+      .subtle {
+        color: var(--muted);
+      }
+
+      .shell {
+        width: 100%;
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 0 16px 16px;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: grid;
+        grid-template-columns: minmax(360px, 1fr) auto;
+        gap: 16px;
+        align-items: end;
+        padding: 16px 0;
+        background: rgba(245, 246, 247, 0.94);
+        border-bottom: 1px solid rgba(223, 227, 232, 0.92);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+      }
+
+      .top-meta,
+      .toolbar,
+      .row,
+      .row-meta,
+      .chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .top-meta {
+        justify-content: flex-end;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 22px;
+        padding: 2px 7px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--paper-soft);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 750;
+        white-space: nowrap;
+      }
+
+      .badge.real {
+        border-color: rgba(11, 117, 104, 0.25);
+        background: var(--real-soft);
+        color: var(--real);
+      }
+
+      .badge.ai {
+        border-color: rgba(35, 79, 125, 0.22);
+        background: var(--ai-soft);
+        color: var(--ai);
+      }
+
+      .badge.external {
+        border-color: rgba(8, 118, 95, 0.2);
+        background: var(--real-soft);
+        color: var(--real);
+      }
+
+      .badge.warn {
+        border-color: rgba(169, 93, 0, 0.24);
+        background: var(--warn-soft);
+        color: var(--warn);
+      }
+
+      .badge.bad {
+        border-color: rgba(168, 67, 60, 0.22);
+        background: var(--bad-soft);
+        color: var(--bad);
+      }
+
+      .badge.draft {
+        border-color: rgba(169, 93, 0, 0.18);
+        background: #fbf3df;
+        color: #8a5a00;
+      }
+
+      [data-tip] {
+        position: relative;
+        cursor: help;
+      }
+
+      .global-tooltip {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 2147483647;
+        width: max-content;
+        max-width: min(460px, calc(100vw - 24px));
+        padding: 9px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 7px;
+        background: #15191f;
+        color: #fff;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.55;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(4px);
+        transition: opacity 0.12s ease, transform 0.12s ease;
+      }
+
+      .global-tooltip.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .panel,
+      .rail-block,
+      .metric {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      .metric b {
+        display: block;
+        margin: 5px 0 4px;
+        font-size: 22px;
+        line-height: 1;
+      }
+
+      .metric-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 100%;
+        min-width: 0;
+      }
+
+      .tip-mark {
+        display: inline-grid;
+        place-items: center;
+        width: 16px;
+        height: 16px;
+        flex: 0 0 auto;
+        border: 1px solid var(--line-strong);
+        border-radius: 50%;
+        background: #f8fafc;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .metric span:first-child,
+      th,
+      .label {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 286px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        height: calc(100vh - 96px);
+        min-height: 0;
+      }
+
+      .rail {
+        position: sticky;
+        top: 88px;
+        display: grid;
+        gap: 12px;
+        max-height: calc(100vh - 104px);
+        overflow: auto;
+      }
+
+      .rail-block,
+      .panel {
+        padding: 12px;
+      }
+
+      .tabs,
+      .periods,
+      .projects {
+        display: grid;
+        gap: 8px;
+      }
+
+      .project-filter {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .project-filter button {
+        min-height: 28px;
+        padding: 0 8px;
+        border-radius: 6px;
+        background: var(--paper);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .project-filter button.active {
+        border-color: rgba(11, 117, 104, 0.25);
+        background: var(--real-soft);
+        color: var(--real);
+      }
+
+      .tab,
+      .period,
+      .project {
+        width: 100%;
+        background: transparent;
+        color: var(--muted);
+        font-weight: 850;
+        text-align: left;
+      }
+
+      .tab,
+      .period {
+        padding: 0 12px;
+      }
+
+      .tab.active,
+      .period.active,
+      .project.active {
+        border-color: rgba(20, 27, 34, 0.08);
+        background: var(--black);
+        color: #fff;
+      }
+
+      .project {
+        min-height: 74px;
+        padding: 12px;
+        background: var(--paper-soft);
+      }
+
+      .project strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .project .stats {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .period-calendar {
+        display: grid;
+        gap: 10px;
+      }
+
+      .calendar-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .calendar-title {
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 900;
+      }
+
+      .calendar-nav {
+        width: 34px;
+        min-height: 34px;
+        padding: 0;
+        text-align: center;
+      }
+
+      .calendar-weekdays,
+      .calendar-days {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 5px;
+      }
+
+      .calendar-weekdays span {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        text-align: center;
+      }
+
+      .calendar-day {
+        min-height: 42px;
+        padding: 5px 3px;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 2px;
+        text-align: center;
+      }
+
+      .calendar-day strong {
+        color: inherit;
+        font-size: 12px;
+      }
+
+      .calendar-day span {
+        font-size: 11px;
+        color: inherit;
+        opacity: 0.76;
+      }
+
+      .calendar-day.no-data {
+        color: #a0a6ad;
+      }
+
+      .calendar-blank {
+        min-height: 42px;
+      }
+
+      .period-reset {
+        min-height: 40px;
+      }
+
+      .main {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+        overflow: auto;
+      }
+
+      .section {
+        display: none;
+      }
+
+      .section.active {
+        display: grid;
+        gap: 12px;
+        min-height: 0;
+      }
+
+      #messages.section.active,
+      #replies.section.active {
+        height: 100%;
+        min-height: 0;
+      }
+
+      #messages .panel {
+        display: grid;
+        grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      #replies .panel {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .panel-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .kpis,
+      .chart-grid,
+      .split,
+      .detail-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .kpis {
+        grid-template-columns: repeat(4, minmax(160px, 1fr));
+      }
+
+      .staffing-preview {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .staffing-slot {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 9px 10px;
+        background: var(--paper-soft);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .staffing-slot .slot-time {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .staffing-slot .slot-head {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .staffing-slot .slot-meta {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .staffing-slot.is-high {
+        border-color: rgba(168, 67, 60, 0.3);
+        background: var(--bad-soft);
+      }
+
+      .priority-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .priority-pill {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 9px 10px;
+        background: var(--paper-soft);
+      }
+      .priority-pill .pill-key {
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--ink);
+      }
+      .priority-pill .pill-count {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 4px 0 2px;
+      }
+      .priority-pill .pill-label {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .priority-pill.p0 { border-left: 4px solid #a8433c; }
+      .priority-pill.p1 { border-left: 4px solid #a95d00; }
+      .priority-pill.p2 { border-left: 4px solid var(--real); }
+      .priority-pill.p3 { border-left: 4px solid var(--muted); }
+
+      .sla-traffic {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .sla-light {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 10px;
+        background: var(--paper-soft);
+      }
+      .sla-light .light-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .sla-light .light-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+      .sla-light.is-pending .light-dot { background: #c8b275; }
+      .sla-light.is-good .light-dot { background: var(--real); }
+      .sla-light.is-bad .light-dot { background: #a8433c; }
+      .sla-light .light-value {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 6px 0 2px;
+      }
+      .sla-light .light-note {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .staffing-params {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .staffing-param-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        background: var(--paper-soft);
+      }
+      .staffing-param-card .param-label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .staffing-param-card .param-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 4px 0 2px;
+      }
+      .staffing-param-card .param-note {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .staffing-formula {
+        margin-top: 12px;
+        padding: 10px 12px;
+        background: var(--ai-soft);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+        font-size: 13px;
+        color: var(--ai);
+      }
+
+      .work-minute-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .work-minute-table th,
+      .work-minute-table td {
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        font-size: 13px;
+        vertical-align: top;
+      }
+      .work-minute-table th {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      .work-minute-table tr:last-child td { border-bottom: none; }
+      .work-minute-table .priority-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .work-minute-table .priority-tag.p0 { background: var(--bad-soft); color: var(--bad); }
+      .work-minute-table .priority-tag.p1 { background: var(--warn-soft); color: var(--warn); }
+      .work-minute-table .priority-tag.p2 { background: var(--ai-soft); color: var(--ai); }
+      .work-minute-table .priority-tag.p3 { background: var(--paper-soft); color: var(--muted); border: 1px solid var(--line); }
+      .work-minute-table .examples {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .staffing-heatmap {
+        display: grid;
+        gap: 8px;
+      }
+      .heatmap-row {
+        display: grid;
+        grid-template-columns: 92px 1fr;
+        gap: 8px;
+        align-items: stretch;
+      }
+      .heatmap-row .day-label {
+        font-size: 12px;
+        color: var(--muted);
+        align-self: center;
+      }
+      .heatmap-cells {
+        display: grid;
+        grid-template-columns: repeat(24, minmax(0, 1fr));
+        gap: 3px;
+      }
+      .heatmap-cell {
+        aspect-ratio: 1;
+        min-height: 28px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: var(--paper-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        cursor: default;
+      }
+      .heatmap-cell.has-data {
+        cursor: pointer;
+        color: var(--ink);
+      }
+      .heatmap-cell.head-1 { background: #eef4f1; }
+      .heatmap-cell.head-2 { background: #d2e6dc; color: #07564b; }
+      .heatmap-cell.head-3 { background: #a5cdbc; color: #053b32; }
+      .heatmap-cell.head-4 { background: #5fa68b; color: #fff; }
+      .heatmap-cell.has-high { box-shadow: inset 0 0 0 2px rgba(168, 67, 60, 0.55); }
+      .heatmap-cell.is-active { outline: 2px solid var(--real); outline-offset: 1px; }
+      .heatmap-legend {
+        display: flex;
+        gap: 14px;
+        margin-top: 10px;
+        font-size: 11px;
+        color: var(--muted);
+        flex-wrap: wrap;
+      }
+      .heatmap-legend .swatch {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        border: 1px solid var(--line);
+        margin-right: 4px;
+        vertical-align: -2px;
+      }
+
+      .staffing-detail {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .staffing-detail .detail-block {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 10px 12px;
+        background: var(--paper-soft);
+      }
+      .staffing-detail .detail-block h3 {
+        margin: 0 0 6px;
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      .staffing-detail .breakdown-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        padding: 3px 0;
+      }
+      .staffing-detail .role-row {
+        font-size: 13px;
+        padding: 4px 0;
+        border-top: 1px dashed var(--line);
+      }
+      .staffing-detail .role-row:first-child { border-top: none; }
+      .staffing-detail .role-row .role-focus {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .staffing-detail .formula-line {
+        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+        font-size: 12px;
+        color: var(--ink);
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 6px 8px;
+        margin-top: 4px;
+      }
+
+      .chart-grid {
+        grid-template-columns: 1.35fr 0.85fr;
+      }
+
+      .split {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .detail-grid {
+        grid-template-columns: minmax(360px, 0.82fr) minmax(0, 1.18fr);
+      }
+
+      .metric {
+        min-height: 78px;
+        padding: 10px 12px;
+      }
+
+      .message-load-controls {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        padding-top: 10px;
+      }
+
+      .message-load-controls .action-btn {
+        min-height: 32px;
+      }
+
+      .recalled-message {
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      .mini-note {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .search,
+      .select {
+        width: 100%;
+        min-height: 44px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff;
+        color: var(--ink);
+        padding: 0 12px;
+      }
+
+      .message-filters,
+      .staff-picker {
+        display: grid;
+        gap: 8px;
+      }
+
+      .message-filters {
+        grid-template-columns: minmax(160px, 1.2fr) minmax(140px, 0.8fr) minmax(150px, 0.8fr);
+        margin-bottom: 8px;
+      }
+
+      .staff-picker {
+        margin: 10px 0;
+        grid-template-columns: minmax(180px, 1fr) minmax(180px, 1.4fr);
+      }
+
+      .identity-form {
+        display: grid;
+        grid-template-columns: minmax(190px, 1fr) minmax(140px, 0.72fr) minmax(170px, 0.85fr) 120px auto;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .identity-form .action-btn {
+        min-height: 44px;
+      }
+
+      .identity-editor {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border: 1px dashed var(--line-strong);
+        border-radius: var(--radius);
+        background: rgba(251, 248, 239, 0.72);
+      }
+
+      .identity-editor summary {
+        color: var(--real);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .identity-editor .identity-form {
+        margin-top: 10px;
+      }
+
+      .role-grid,
+      .ops-focus,
+      .person-list,
+      .person-detail,
+      .person-groups,
+      .recent-messages {
+        display: grid;
+        gap: 10px;
+      }
+
+      .role-row,
+      .ops-card,
+      .person-card,
+      .person-detail-card,
+      .mini-message {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff;
+      }
+
+      .role-row,
+      .ops-card,
+      .person-card,
+      .person-detail-card {
+        padding: 12px;
+      }
+
+      .ops-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .ops-card {
+        display: grid;
+        gap: 6px;
+      }
+
+      .ops-card b {
+        font-size: 22px;
+        line-height: 1.1;
+      }
+
+      .ops-card span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .person-card {
+        display: grid;
+        gap: 10px;
+      }
+
+      .person-card.active {
+        border-color: rgba(11, 117, 104, 0.42);
+        background: #f2fbf8;
+      }
+
+      .person-title,
+      .person-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .person-title strong {
+        font-size: 15px;
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .stat {
+        padding: 8px;
+        border-radius: 7px;
+        background: var(--paper-soft);
+      }
+
+      .stat span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 850;
+      }
+
+      .stat b {
+        display: block;
+        margin-top: 3px;
+        font-size: 16px;
+      }
+
+      .mini-message {
+        padding: 10px;
+      }
+
+      .mini-message-clickable {
+        cursor: pointer;
+        transition: border-color 0.16s ease, background 0.16s ease;
+      }
+
+      .mini-message-clickable:hover {
+        border-color: rgba(11, 117, 104, 0.36);
+        background: #f7fbf9;
+      }
+
+      .mini-message-hint {
+        margin-top: 6px;
+        color: var(--real);
+        font-size: 11px;
+        font-weight: 850;
+      }
+
+      .scroll {
+        max-height: 660px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+
+      .lark-scroll {
+        max-height: none;
+        height: 100%;
+        min-height: 0;
+        overflow: auto;
+        padding: 0;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper);
+      }
+
+      .lark-room {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        margin: 8px 0 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper-soft);
+      }
+
+      .lark-room-avatar {
+        display: none;
+      }
+
+      .lark-room h3 {
+        font-size: 16px;
+        line-height: 1.25;
+      }
+
+      .lark-room-meta,
+      .lark-message-meta,
+      .lark-message-tools {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .lark-feed {
+        display: grid;
+        gap: 0;
+        padding: 0;
+      }
+
+      .lark-date {
+        padding: 7px 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--paper-soft);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 750;
+      }
+
+      .lark-system {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--line);
+        background: #fbfcfd;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .lark-message {
+        display: grid;
+        grid-template-columns: 152px 184px minmax(0, 1fr) 190px;
+        gap: 10px;
+        align-items: baseline;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--paper);
+      }
+
+      .lark-message:hover {
+        background: #fbfcfd;
+      }
+
+      .lark-message.lark-candidate {
+        box-shadow: inset 3px 0 0 var(--warn);
+      }
+
+      .lark-message.lark-target,
+      .lark-system.lark-target {
+        background: #fff8f3;
+        box-shadow: inset 3px 0 0 var(--bad);
+      }
+
+      .lark-avatar,
+      .lark-card {
+        display: contents;
+      }
+
+      .lark-message-head {
+        display: flex;
+        gap: 6px;
+        align-items: baseline;
+        min-width: 0;
+      }
+
+      .lark-main {
+        min-width: 0;
+      }
+
+      .lark-sender {
+        display: flex;
+        gap: 6px;
+        align-items: baseline;
+        min-width: 0;
+      }
+
+      .lark-sender strong {
+        overflow: hidden;
+        color: var(--ink);
+        font-size: 13px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .lark-time {
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .lark-quote {
+        margin: 0 0 4px;
+        padding: 6px 8px;
+        border-left: 2px solid var(--line-strong);
+        background: var(--paper-soft);
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .lark-quote b {
+        display: inline;
+        margin-right: 6px;
+        color: var(--ink);
+        font-size: 12px;
+      }
+
+      .lark-content {
+        min-width: 0;
+        color: var(--ink);
+        font-size: 13px;
+        line-height: 1.62;
+        white-space: normal;
+        word-break: break-word;
+      }
+
+      .lark-content .mention {
+        color: var(--real);
+        font-weight: 850;
+      }
+
+      .lark-rich-line {
+        margin: 4px 0;
+      }
+
+      .lark-rich-line:first-child {
+        margin-top: 0;
+      }
+
+      .lark-rich-line:last-child {
+        margin-bottom: 0;
+      }
+
+      .lark-image-wrap {
+        width: fit-content;
+        max-width: min(380px, 100%);
+        margin: 6px 0;
+        overflow: hidden;
+        border: 1px solid #e2e6ed;
+        border-radius: 8px;
+        background: #f8fafc;
+      }
+
+      .lark-image {
+        display: block;
+        max-width: 100%;
+        max-height: 240px;
+        object-fit: contain;
+      }
+
+      .lark-image-fallback {
+        display: none;
+        padding: 12px;
+        color: #8a929d;
+        font-size: 12px;
+      }
+
+      .lark-image-wrap.image-error .lark-image {
+        display: none;
+      }
+
+      .lark-image-wrap.image-error .lark-image-fallback {
+        display: block;
+      }
+
+      .lark-attachment {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+        width: min(560px, 100%);
+        margin: 6px 0;
+        padding: 9px;
+        border: 1px solid #e2e6ed;
+        border-radius: 8px;
+        background: #f9fafc;
+      }
+
+      .lark-attachment-icon {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border-radius: 8px;
+        background: var(--ai-soft);
+        color: var(--ai);
+        font-weight: 900;
+      }
+
+      .lark-attachment strong {
+        display: block;
+        margin-bottom: 3px;
+      }
+
+      .lark-attachment span {
+        color: #8a929d;
+        font-size: 12px;
+      }
+
+      .lark-message-tools {
+        justify-content: flex-end;
+        min-width: 0;
+      }
+
+      .lark-message-tools span {
+        overflow: hidden;
+        max-width: 100%;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .message,
+      .candidate,
+      .reply-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff;
+        padding: 13px;
+      }
+
+      .message + .message,
+      .candidate + .candidate,
+      .reply-card + .reply-card {
+        margin-top: 10px;
+      }
+
+      .message.system {
+        background: #f8f6ef;
+      }
+
+      .message.internal {
+        border-left: 4px solid var(--real);
+      }
+
+      .message.candidate-mark {
+        border-left: 4px solid var(--warn);
+      }
+
+      .chat-feed {
+        display: grid;
+        gap: 12px;
+        padding: 8px 6px 14px 0;
+      }
+
+      .chat-line {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 78%);
+        gap: 10px;
+        align-items: start;
+      }
+
+      .chat-line.internal {
+        grid-template-columns: minmax(0, 78%) 34px;
+        justify-content: end;
+      }
+
+      .chat-line.internal .chat-avatar {
+        grid-column: 2;
+      }
+
+      .chat-line.internal .chat-bubble {
+        grid-column: 1;
+        grid-row: 1;
+        justify-self: end;
+        background: #e5f4ee;
+        border-color: rgba(11, 117, 104, 0.2);
+      }
+
+      .chat-avatar {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--black);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .chat-bubble {
+        max-width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 10px 12px;
+        box-shadow: 0 8px 22px rgba(31, 37, 44, 0.05);
+      }
+
+      .chat-name {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: baseline;
+        margin-bottom: 5px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .chat-text {
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.68;
+      }
+
+      .chat-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .reply-thread {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 254, 250, 0.94);
+        padding: 12px;
+      }
+
+      .reply-thread + .reply-thread {
+        margin-top: 12px;
+      }
+
+      .thread-parent {
+        margin: 10px 0 12px;
+        padding: 10px 12px;
+        border-left: 4px solid var(--warn);
+        border-radius: 8px;
+        background: var(--warn-soft);
+      }
+
+      .candidate-button {
+        width: 100%;
+        min-height: auto;
+        text-align: left;
+        color: inherit;
+      }
+
+      .candidate-button.active {
+        border-color: rgba(35, 79, 125, 0.45);
+        background: rgba(231, 238, 246, 0.92);
+      }
+
+      .candidate-row {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      .candidate-row .text {
+        margin: 6px 0 6px;
+        line-height: 1.6;
+      }
+      .candidate-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+      }
+      .candidate-actions .action-btn {
+        font-size: 12px;
+        padding: 4px 10px;
+        min-height: 28px;
+      }
+      .candidate-thread {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px dashed var(--line);
+        display: grid;
+        gap: 8px;
+      }
+
+      .issue-thread {
+        display: grid;
+        gap: 12px;
+      }
+
+      .ai-finding {
+        border-top: 1px solid var(--line);
+        padding: 10px 0;
+      }
+
+      .ai-finding:first-of-type {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .row {
+        justify-content: space-between;
+      }
+
+      .row-meta {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .author {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        min-width: 220px;
+      }
+
+      .avatar {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--black);
+        color: #fff;
+        font-weight: 900;
+      }
+
+      .text {
+        margin-top: 10px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.72;
+      }
+
+      .empty,
+      .truth-note {
+        border: 1px dashed var(--line-strong);
+        border-radius: var(--radius);
+        background: rgba(251, 248, 239, 0.78);
+        color: var(--muted);
+        padding: 18px;
+        line-height: 1.8;
+      }
+
+      .truth-note b {
+        display: block;
+        margin-top: 8px;
+        color: var(--ink);
+      }
+
+      .truth-note b:first-child {
+        margin-top: 0;
+      }
+
+      .bars {
+        display: grid;
+        gap: 8px;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: minmax(86px, 170px) minmax(100px, 1fr) 56px;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .person-source-row {
+        grid-template-columns: minmax(120px, 1.2fr) minmax(120px, 1fr) 64px auto;
+      }
+
+      .person-bar-meta {
+        grid-column: 1 / -1;
+      }
+
+      .person-findings {
+        display: grid;
+        gap: 8px;
+      }
+
+      .bar-track {
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #edf0f3;
+      }
+
+      .bar-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: var(--real);
+      }
+
+      .svg-chart {
+        display: block;
+        width: 100%;
+        min-height: 250px;
+      }
+
+      .hour-bars {
+        display: grid;
+        gap: 6px;
+      }
+
+      .hour-row {
+        display: grid;
+        grid-template-columns: 56px minmax(90px, 1fr) 52px;
+        gap: 8px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .hour-track {
+        height: 9px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #edf0f3;
+      }
+
+      .hour-fill {
+        width: var(--w, 0%);
+        height: 100%;
+        border-radius: inherit;
+        background: var(--real);
+      }
+
+      .hour-value {
+        color: var(--ink);
+        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+        text-align: right;
+      }
+
+      .donut-wrap {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr);
+        gap: 20px;
+        align-items: center;
+      }
+
+      .donut {
+        position: relative;
+        width: 180px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 1px rgba(20, 27, 34, 0.08);
+      }
+
+      .donut::after {
+        content: attr(data-total);
+        position: absolute;
+        inset: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 30px;
+        font-weight: 900;
+      }
+
+      .legend {
+        display: grid;
+        gap: 10px;
+      }
+
+      .legend-row {
+        display: grid;
+        grid-template-columns: 14px minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fff;
+      }
+
+      th,
+      td {
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .ai-zone {
+        border-color: var(--line);
+        background: var(--paper);
+      }
+
+      @media (max-width: 1180px) {
+        .workspace,
+        .chart-grid,
+        .split,
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .identity-form {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .message-filters,
+        .staff-picker {
+          grid-template-columns: 1fr;
+        }
+
+        .rail {
+          position: static;
+        }
+
+        .kpis {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .staffing-preview {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .priority-strip,
+        .sla-traffic {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .staffing-params {
+          grid-template-columns: 1fr;
+        }
+
+        .staffing-detail {
+          grid-template-columns: 1fr;
+        }
+
+        .heatmap-row {
+          grid-template-columns: 76px 1fr;
+        }
+
+        .ops-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 720px) {
+        .shell {
+          padding: 0 9px 12px;
+        }
+
+        .topbar {
+          grid-template-columns: 1fr;
+        }
+
+        .top-meta {
+          justify-content: flex-start;
+        }
+
+        .kpis {
+          grid-template-columns: 1fr;
+        }
+
+        .staffing-preview {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .priority-strip,
+        .sla-traffic {
+          grid-template-columns: 1fr;
+        }
+
+        .stat-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .ops-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .donut-wrap {
+          grid-template-columns: 1fr;
+        }
+
+        .identity-form {
+          grid-template-columns: 1fr;
+        }
+
+        .lark-room {
+          grid-template-columns: 1fr;
+        }
+
+        .lark-room > .lark-room-meta {
+          grid-column: auto;
+        }
+
+        .lark-feed {
+          padding: 0;
+        }
+
+        .lark-message {
+          grid-template-columns: 1fr;
+          gap: 5px;
+        }
+
+        .lark-content {
+          font-size: 13px;
+        }
+
+        .lark-message-tools {
+          justify-content: flex-start;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="/chat.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>群运营分析工作台</h1>
+          <p class="subtle" id="generatedAt">生成时间读取中</p>
+        </div>
+        <div class="top-meta">
+          <span class="badge real" id="status">连接中</span>
+          <span class="badge real" id="storageStatus">数据库</span>
+          <span class="badge" id="archiveDir">数据目录</span>
+          <span class="badge" id="aiStatus">模型状态</span>
+          <button class="action-btn" id="refreshButton">刷新群和消息</button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <aside class="rail">
+          <div class="rail-block">
+            <div class="panel-head"><h2>视图</h2></div>
+            <div class="tabs">
+              <button class="tab active" data-tab="overview">真实总览</button>
+              <button class="tab" data-tab="messages">消息流</button>
+              <button class="tab" data-tab="staff">人员活跃</button>
+              <button class="tab" data-tab="ai">复核分析</button>
+              <button class="tab" data-tab="chat">问数助手</button>
+            </div>
+          </div>
+          <div class="rail-block">
+            <div class="panel-head">
+              <h2>时间</h2>
+              <span class="badge" id="activePeriod">全部</span>
+            </div>
+            <div class="periods" id="periods"></div>
+          </div>
+          <div class="rail-block">
+            <div class="panel-head">
+              <h2>项目</h2>
+              <div class="chips">
+                <span class="badge real" id="projectCount">0</span>
+                <button class="action-btn secondary" id="refreshGroupsButton" data-tip="发现新加入的飞书群，同步增量消息，并重建当前 dashboard。" tabindex="0">刷新</button>
+              </div>
+            </div>
+            <div class="projects" id="projectList"></div>
+          </div>
+        </aside>
+
+        <div class="main">
+          <section id="overview" class="section active">
+            <div class="kpis" id="kpis"></div>
+            <div class="chart-grid">
+              <div class="panel">
+                <div class="panel-head">
+                  <h2>消息类型</h2>
+                  <span class="badge real" id="slaBadge" data-tip="按飞书原始 msg_type 字段聚合：text、post、image、sticker、system 等，不使用规则候选或模型判断。" tabindex="0">飞书字段</span>
+                </div>
+                <div id="slaTraffic"></div>
+              </div>
+              <div class="panel">
+                <div class="panel-head">
+                  <h2>回复引用</h2>
+                  <span class="badge real" data-tip="只统计飞书消息里的回复/引用链路字段，包括回复消息数、普通消息数和可见引用边；不推断未回复、不计算 SLA。" tabindex="0">飞书字段</span>
+                </div>
+                <div id="priorityStrip"></div>
+                <div class="mini-note" id="priorityStripNote"></div>
+              </div>
+            </div>
+            <div class="chart-grid">
+              <div class="panel">
+                <div class="panel-head">
+                  <h2>消息时段</h2>
+                  <span class="badge real">真实消息时间</span>
+                </div>
+                <div id="hourChart"></div>
+              </div>
+              <div class="panel">
+                <div class="panel-head">
+                  <h2>身份分布</h2>
+                  <span class="badge real" data-tip="身份来自人员表、飞书通讯录回写、应用机器人类型、消息内姓名或原始 open_id。人员页可修正。" tabindex="0">身份来源</span>
+                </div>
+                <div id="rolePanel"></div>
+              </div>
+            </div>
+          </section>
+
+          <section id="messages" class="section">
+            <div class="panel">
+              <div class="panel-head">
+                <h2>消息流</h2>
+                <span class="badge real" id="messageCount">0</span>
+              </div>
+              <div class="message-filters">
+                <input class="search" id="messageTextSearch" placeholder="正文" />
+                <input class="search" id="messageSenderSearch" placeholder="发送人 / open_id" />
+                <input class="search" id="messageMetaSearch" placeholder="群 / 消息 ID / 类型" />
+              </div>
+              <div class="mini-note" id="messageScopeNote"></div>
+              <div class="lark-scroll">
+                <div class="lark-feed" id="messageFeed"></div>
+              </div>
+              <div class="message-load-controls" id="messageLoadControls"></div>
+            </div>
+          </section>
+
+          <section id="staffing" class="section">
+            <div class="panel">
+              <div class="panel-head">
+                <h2>排班模型参数</h2>
+                <span class="badge draft" id="staffingSourceBadge">规则召回</span>
+              </div>
+              <div id="staffingParams"></div>
+              <div class="mini-note">参数定义在 <code>src/group-analysis.js</code> 的 <code>STAFFING_MODEL</code> 常量；调整后重跑 <code>npm run dashboard</code> 生效。</div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h2>优先级 → 工作量分钟</h2>
+                <span class="badge draft">规则召回</span>
+              </div>
+              <div id="standardWorkTable"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h2>按时段建议人数</h2>
+                <span class="badge draft" id="staffingHeatmapBadge">点击单元格看详情</span>
+              </div>
+              <div id="staffingHeatmap"></div>
+              <div class="mini-note" id="staffingHeatmapNote"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h2>时段详情</h2>
+                <span class="badge" id="staffingDetailBadge">未选中</span>
+              </div>
+              <div id="staffingDetail"></div>
+            </div>
+          </section>
+
+          <section id="staff" class="section">
+            <div class="panel">
+              <div class="panel-head">
+                <h2>人员监控</h2>
+                <div class="chips">
+                  <button class="action-btn" id="resolvePeopleButton" data-tip="调用飞书通讯录接口回写用户名称；权限允许时也会保留部门/团队字段。" tabindex="0">飞书接口回写</button>
+                  <span class="badge real">完整统计</span>
+                </div>
+              </div>
+              <details class="identity-editor">
+                <summary>手动录入 / 修正人员身份</summary>
+                <div class="identity-form">
+                  <input class="search" id="manualPersonId" placeholder="open_id / user_id" />
+                  <input class="search" id="manualPersonName" placeholder="姓名" />
+                  <input class="search" id="manualPersonTeam" placeholder="部门/标签，如 业务-Thrive-OPS" />
+                  <select class="select" id="manualPersonRole">
+                    <option value="operator">运营</option>
+                    <option value="reviewer">审核</option>
+                    <option value="pm">PM</option>
+                    <option value="expert">专家</option>
+                    <option value="bot">机器人</option>
+                  </select>
+                  <button class="action-btn" id="addManualPersonButton">保存身份</button>
+                </div>
+              </details>
+              <div class="staff-picker">
+                <input class="search" id="staffSearch" placeholder="搜索姓名、open_id、身份、来源、部门/团队" />
+                <select class="select" id="staffSelect"></select>
+              </div>
+              <div id="staffDetail" class="mini-note"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <h2>发送人列表</h2>
+                <span class="badge real" id="staffListBadge">按消息量排序</span>
+              </div>
+              <div id="allStaffTable"></div>
+            </div>
+          </section>
+
+          <section id="ai" class="section">
+            <!-- 段 1: 模型触发栏 -->
+            <div class="panel ai-zone">
+              <div class="panel-head">
+                <h2>模型复核</h2>
+                <div class="chips">
+                  <span class="badge ai" id="aiLastRun">未运行</span>
+                  <button class="action-btn" id="runAiButton">运行复核</button>
+                </div>
+              </div>
+              <div id="aiRunHint" class="truth-note">
+                <b>每天手动跑一次</b>
+                <span>点击右上角「运行复核」会调用模型，写入 ai-insights.json。完成后页面会自动刷新数据。</span>
+              </div>
+            </div>
+
+            <!-- 段 2: 复核总览 4 卡 -->
+            <div class="kpis" id="aiOverview"></div>
+
+            <!-- 段 3: 类型分布 + 每日趋势 -->
+            <div class="split">
+              <div class="panel">
+                <div class="panel-head">
+                  <h2>问题类型分布</h2>
+                  <span class="badge" id="aiTypeTotal">0</span>
+                </div>
+                <div id="aiTypeDist"></div>
+              </div>
+              <div class="panel">
+                <div class="panel-head">
+                  <h2>每日趋势 · 近 14 天</h2>
+                </div>
+                <div id="aiDailyTrend"></div>
+              </div>
+            </div>
+
+            <!-- 段 4: 高优先级问题 -->
+            <div class="panel">
+              <div class="panel-head">
+              <h2>高优先级（未解决 + 提问 ≥24h + 高互动/含急词）</h2>
+                <span class="badge warn" id="aiHighPriCount">0</span>
+              </div>
+              <div id="aiHighPriList" class="scroll"></div>
+            </div>
+
+            <!-- 段 5: 模型产出 -->
+            <div class="panel ai-zone">
+              <div class="panel-head">
+                <h2>模型产出</h2>
+                <span class="badge ai">运行后填充</span>
+              </div>
+              <div id="aiResults" class="scroll"></div>
+            </div>
+
+            <!-- 段 6: 全部问题（保留 candidateList id） -->
+            <div class="panel">
+              <div class="panel-head">
+                <h2>全部待判断问题</h2>
+                <span class="badge warn">规则只负责召回</span>
+              </div>
+              <div id="candidateList" class="scroll"></div>
+            </div>
+
+            <!-- 排班 + 风险 -->
+            <div class="split">
+              <div class="panel ai-zone">
+                <div class="panel-head">
+                  <h2>排班建议</h2>
+                  <span class="badge ai">需证据</span>
+                </div>
+                <div id="aiStaffing"></div>
+              </div>
+              <div class="panel ai-zone">
+                <div class="panel-head">
+                  <h2>风险与下一步</h2>
+                  <span class="badge ai">不覆盖事实</span>
+                </div>
+                <div id="aiRisks"></div>
+              </div>
+            </div>
+          </section>
+          <section id="chat" class="section">
+            <div class="chat-layout">
+              <aside class="chat-sessions">
+                <button class="chat-new-btn" id="chatNewBtn">+ 新会话</button>
+                <div class="chat-sessions-head">
+                  <span>历史会话</span>
+                </div>
+                <div class="chat-sessions-list" id="chatSessionList"></div>
+              </aside>
+              <div class="chat-main">
+                <div class="chat-toolbar">
+                  <div class="chat-toolbar-title">
+                    <strong>问数助手</strong>
+                    <span id="chatModelStatus">直接问数据，正在读取问数模型</span>
+                  </div>
+                  <label>
+                    项目：
+                    <select id="chatProjectSelect">
+                      <option value="">（全部项目）</option>
+                    </select>
+                  </label>
+                  <details class="chat-advanced">
+                    <summary>高级</summary>
+                    <label>
+                      <input type="checkbox" id="chatAllowDestructive" />
+                      允许重建/批量复核
+                    </label>
+                  </details>
+                </div>
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input-bar">
+                  <textarea
+                    id="chatInput"
+                    class="chat-input"
+                    placeholder="问点什么……（Enter 发送，Shift + Enter 换行）"
+                    rows="2"
+                  ></textarea>
+                  <button class="chat-send" id="chatSend">发送</button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+    <script src="/chat.js"></script>
+
+    <script>
+      const state = {
+        dashboard: null,
+        ai: null,
+        manualOps: {},
+        aiStatus: { running: false },
+        tab: "overview",
+        period: "all",
+        calendarMonth: "",
+        projectId: "",
+        projectTagFilter: "all",
+        staffSearch: "",
+        messageTextSearch: "",
+        messageSenderSearch: "",
+        messageMetaSearch: "",
+        messageSourceFilter: null,
+        messageSourceRows: [],
+        messageSourceReplyEdges: [],
+        messageSourceTotal: 0,
+        messageSourceSource: "",
+        messageSourceLoading: false,
+        messageVisibleCount: 300,
+        messageScopeKey: "",
+        dynamicMetrics: {},
+        dynamicMetricsLoadingKey: "",
+        selectedCandidateId: "",
+        selectedStaffingSlot: ""
+      };
+
+      const fmt = new Intl.NumberFormat("zh-CN");
+      const palette = ["#0b7568", "#234f7d", "#a95d00", "#a8433c", "#596d3a", "#79507c", "#5f6770"];
+
+      function $(id) {
+        return document.getElementById(id);
+      }
+
+      function emptyMetrics() {
+        return {
+          messageCount: 0,
+          firstTime: "",
+          lastTime: "",
+          activeDayCount: 0,
+          uniqueSenderCount: 0,
+          internalSenderCount: 0,
+          questionCandidateCount: 0,
+          analysisCandidateCount: 0,
+          replyCount: 0,
+          byDate: [],
+          byDateHour: {},
+          byHour: {},
+          byMsgType: {},
+          messageTypeRows: [],
+          coreMetricSummary: { hourlyMessageCount: [], messageTypeDistribution: [] },
+          messages: [],
+          replyEdges: [],
+          analysisCandidates: [],
+          questionCandidates: [],
+          staff: [],
+          internalStaff: [],
+          ruleDraft: {}
+        };
+      }
+
+      function projectFromApiProject(project) {
+        const metrics = emptyMetrics();
+        const output = {
+          projectId: project.projectId,
+          projectName: project.projectName,
+          chats: [],
+          events: [],
+          periods: { all: { label: "全部", startMs: null, endMs: null, metrics } },
+          metrics,
+          pendingSync: true
+        };
+        return applyApiProjectStats(output, project);
+      }
+
+      function applyApiProjectStats(target, project) {
+        const stats = project.stats || {};
+        const metrics = target.periods?.all?.metrics || target.metrics || emptyMetrics();
+        const hasStats = stats.messageCount !== undefined || stats.questionLikeCount !== undefined;
+        metrics.messageCount = Number(stats.messageCount ?? metrics.messageCount ?? 0);
+        metrics.uniqueSenderCount = Number(stats.uniqueSenderCount ?? metrics.uniqueSenderCount ?? 0);
+        metrics.replyCount = Number(stats.replyCount ?? metrics.replyCount ?? 0);
+        metrics.questionCandidateCount = Number(stats.questionLikeCount ?? metrics.questionCandidateCount ?? 0);
+        metrics.analysisCandidateCount = Number(stats.questionLikeCount ?? metrics.analysisCandidateCount ?? 0);
+        metrics.firstTime = stats.firstTime || metrics.firstTime || "";
+        metrics.lastTime = stats.lastTime || metrics.lastTime || "";
+        if (Array.isArray(stats.byDate)) metrics.byDate = stats.byDate;
+        if (stats.byDateHour) metrics.byDateHour = stats.byDateHour;
+        target.projectName = target.projectName || project.projectName || stats.projectName || target.projectId;
+        target.chats = (project.chats || target.chats || []).map((chat) => ({
+          chatId: chat.chatId,
+          groupName: chat.chatName || chat.groupName || target.projectName,
+          external: Boolean(chat.external),
+          messageCount: Number(chat.messageCount || 0),
+          questionLikeCount: Number(chat.questionLikeCount || 0),
+          lastTime: chat.lastTime || ""
+        }));
+        target.periods = target.periods || { all: { label: "全部", startMs: null, endMs: null, metrics } };
+        target.periods.all = target.periods.all || { label: "全部", startMs: null, endMs: null, metrics };
+        target.periods.all.metrics = metrics;
+        target.metrics = metrics;
+        target.pendingSync = !hasStats;
+        return target;
+      }
+
+      async function mergeProjectsFromApi() {
+        if (!state.dashboard) return;
+        try {
+          const response = await fetch("/api/projects", { cache: "no-store", signal: AbortSignal.timeout(5000) });
+          const result = await response.json();
+          if (!result.ok) return;
+          const current = new Map((state.dashboard.projects || []).map((project) => [project.projectId, project]));
+          for (const project of result.projects || []) {
+            const existing = current.get(project.projectId);
+            if (existing) {
+              applyApiProjectStats(existing, project);
+              continue;
+            }
+            current.set(project.projectId, projectFromApiProject(project));
+          }
+          state.dashboard.projects = [...current.values()];
+        } catch {
+          // 项目列表只是增强数据；失败时保留 dashboard 原样。
+        }
+      }
+
+      async function refreshStorageStatusFromApi() {
+        if (!state.dashboard) return;
+        try {
+          const response = await fetch("/api/storage/status", { cache: "no-store", signal: AbortSignal.timeout(5000) });
+          const result = await response.json();
+          if (result.ok && result.storage) state.dashboard.storageStatus = result.storage;
+        } catch {
+          // 状态增强失败时继续使用 dashboard 快照。
+        }
+        try {
+          const response = await fetch("/api/overview/stats", { cache: "no-store", signal: AbortSignal.timeout(8000) });
+          const result = await response.json();
+          if (result.ok && result.stats) applyOverviewStats(result.stats);
+        } catch {
+          // 统计增强失败时继续使用 dashboard 快照。
+        }
+      }
+
+      function applyOverviewStats(stats) {
+        const metrics = state.dashboard?.periods?.all?.metrics;
+        if (!metrics) return;
+        metrics.messageCount = Number(stats.messageCount ?? metrics.messageCount ?? 0);
+        metrics.uniqueSenderCount = Number(stats.uniqueSenderCount ?? metrics.uniqueSenderCount ?? 0);
+        metrics.replyCount = Number(stats.replyCount ?? metrics.replyCount ?? 0);
+        metrics.questionCandidateCount = Number(stats.questionLikeCount ?? metrics.questionCandidateCount ?? 0);
+        metrics.analysisCandidateCount = Number(stats.questionLikeCount ?? metrics.analysisCandidateCount ?? 0);
+        metrics.firstTime = stats.firstTime || metrics.firstTime || "";
+        metrics.lastTime = stats.lastTime || metrics.lastTime || "";
+        if (Array.isArray(stats.byDate)) {
+          metrics.byDate = stats.byDate;
+          metrics.activeDayCount = stats.byDate.length;
+        }
+        if (stats.byDateHour) metrics.byDateHour = stats.byDateHour;
+        if (stats.byHour) metrics.byHour = stats.byHour;
+        if (Array.isArray(stats.hourlyMessageCount)) {
+          metrics.coreMetricSummary = {
+            ...(metrics.coreMetricSummary || {}),
+            hourlyMessageCount: stats.hourlyMessageCount
+          };
+        }
+        if (stats.byMsgType) metrics.byMsgType = stats.byMsgType;
+        if (Array.isArray(stats.messageTypeRows)) metrics.messageTypeRows = stats.messageTypeRows.map((row) => ({ ...row, label: messageTypeLabel(row.key) }));
+        if (Array.isArray(stats.byProject)) metrics.byProject = stats.byProject;
+        if (Array.isArray(stats.byChat)) metrics.byChat = stats.byChat;
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function tipAttrs(text) {
+        const value = String(text || "").replace(/\s+/g, " ").trim();
+        if (!value) return "";
+        const safe = escapeHtml(value);
+        return ` data-tip="${safe}" tabindex="0"`;
+      }
+
+      const RULE_TIPS = {
+        candidate:
+          "像问题的消息：外部发送人发出的文本/富文本，正文出现问号、怎么、为什么、失败、打不开等词就先捞出来复核；这不是最终结论。",
+        priority:
+          "优先级：P0=投诉、系统故障、结算异常等紧急风险；P1=无法继续操作、权限、提交失败、规则/驳回阻塞；P3=入口、文档、流程等重复问答；其他先放 P2，复核后覆盖。",
+        staffing:
+          "人数估算：先把每小时的问题按 P0=15 分钟、P1=6 分钟、P2=3 分钟、P3=1 分钟折算成工作量，再除以单人每小时 45 分钟和 80% 利用率；复核后重算。",
+        identity:
+          "身份来源：优先用 people.json 手工配置和飞书通讯录；其次用机器人类型、消息里提到的姓名或 open_id。人员页可以改身份和部门标签。",
+        ops:
+          "巡检项：从当前项目和时间范围里提取需要优先看的问题、没有明确引用回复的问题、内部回复量和高活跃外部发送人；点击相关入口可回到消息流核对。"
+      };
+
+      function priorityRuleTip(priority) {
+        return (
+          {
+            P0: "P0 规则：命中投诉、不满、紧急、大面积、系统故障、结算异常等风险词；折算 15 分钟，目标首响 10 分钟。",
+            P1: "P1 规则：命中无法、不能、看不到、提交失败、登录失败、无权限、打不开、卡住、账号/操作/规则/驳回等阻塞；折算 6 分钟，目标首响 20 分钟。",
+            P2: "P2 规则：未命中 P0/P1/P3 的常规推进问题；折算 3 分钟，目标首响 60 分钟。",
+            P3: "P3 规则：入口、文档、流程、单价、重复 FAQ 等可标准化回复问题；折算 1 分钟，目标首响 60 分钟或批量回复。"
+          }[priority] || RULE_TIPS.priority
+        );
+      }
+
+      function timeText(value) {
+        if (!value) return "-";
+        const text = String(value);
+        if (text.endsWith("Z")) {
+          const date = new Date(text);
+          if (!Number.isNaN(date.getTime())) {
+            return date
+              .toLocaleString("zh-CN", {
+                timeZone: "Asia/Shanghai",
+                hour12: false,
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+              })
+              .replace(/\//g, "-");
+          }
+        }
+        return text.replace("T", " ").replace("+08:00", "");
+      }
+
+      function shanghaiDateFromMs(ms) {
+        return new Date(Number(ms || 0) + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      }
+
+      function secondsText(value) {
+        if (value === null || value === undefined || value === "") return "-";
+        if (value < 60) return `${value} 秒`;
+        if (value < 3600) return `${Math.round(value / 60)} 分钟`;
+        return `${(value / 3600).toFixed(1)} 小时`;
+      }
+
+      function compactId(value) {
+        const text = String(value || "");
+        if (!text) return "-";
+        if (text.length <= 16) return text;
+        return `${text.slice(0, 7)}…${text.slice(-5)}`;
+      }
+
+      function displayName(item) {
+        if (!item) return "未知";
+        if (item.senderNameSource === "raw_open_id") return `未补姓名 ${compactId(item.senderId || item.id)}`;
+        if (item.senderNameSource === "empty_sender") return "系统事件";
+        return String(item.senderName || item.name || "未知");
+      }
+
+      function sourceBadge(source) {
+        const map = {
+          people_config: ["real", "人员表"],
+          feishu_contact_api: ["real", "通讯录"],
+          manual_input: ["real", "添加"],
+          internal_group_unresolved: ["warn", "内部群推断"],
+          message_mention: ["real", "消息内姓名"],
+          system_message_content: ["real", "系统事件"],
+          sender_type_app: ["real", "应用机器人"],
+          raw_open_id: ["warn", "只有ID"],
+          empty_sender: ["bad", "无发送人"]
+        };
+        const [cls, label] = map[source] || ["warn", source || "未知来源"];
+        return `<span class="badge ${cls}"${tipAttrs(`身份来源：${label}。${RULE_TIPS.identity}`)}>${escapeHtml(label)}</span>`;
+      }
+
+      function roleName(role) {
+        return (
+          {
+            external: "专家",
+            expert: "专家",
+            internal: "运营",
+            operator: "运营",
+            reviewer: "审核",
+            pm: "PM",
+            bot: "机器人",
+            system: "系统",
+            unmarked: "专家"
+          }[role] || role || "专家"
+        );
+      }
+
+      function messageTypeLabel(type) {
+        return (
+          {
+            text: "文本",
+            post: "富文本",
+            image: "图片",
+            sticker: "表情",
+            system: "系统消息",
+            merge_forward: "合并转发",
+            video_chat: "视频会议",
+            file: "文件",
+            share_calendar: "日历分享",
+            interactive: "互动卡片",
+            audio: "音频",
+            media: "视频",
+            location: "位置",
+            unknown: "未知类型"
+          }[type] || type || "未知类型"
+        );
+      }
+
+      function scrollToBottom(id) {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          const el = $(id);
+          if (el) el.scrollTop = el.scrollHeight;
+        }));
+      }
+
+      const avatarPalette = ["#3370ff", "#00a870", "#f6a400", "#8f58ff", "#e65245", "#13a8a8", "#4e5969"];
+
+      function hashText(text) {
+        return Array.from(String(text || "")).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+      }
+
+      function avatarInitial(name) {
+        return Array.from(String(name || "未知").trim())[0] || "?";
+      }
+
+      function avatarStyle(name, role) {
+        const color = role === "bot" ? "#4e5969" : avatarPalette[hashText(name) % avatarPalette.length];
+        return `--avatar-bg:${color}`;
+      }
+
+      function roleBadge(role) {
+        const cls = ["external", "expert", "unmarked"].includes(role) ? "external" : ["internal", "operator", "reviewer", "pm", "bot"].includes(role) ? "real" : "";
+        return `<span class="badge ${cls}">${escapeHtml(roleName(role))}</span>`;
+      }
+
+      function departmentBadge(row) {
+        return row?.team
+          ? `<span class="badge real"${tipAttrs("飞书通讯录返回的部门/团队，优先作为人员身份展示。")}>${escapeHtml(row.team)}</span>`
+          : "";
+      }
+
+      function identityBadges(row, options = {}) {
+        const primary = row?.team ? departmentBadge(row) : roleBadge(row?.role);
+        const source = sourceBadge(row?.nameSource);
+        const saved = row?.isInternal
+          ? `<span class="badge real">已录入</span>`
+          : options.showDefault
+            ? `<span class="badge">默认专家</span>`
+            : "";
+        return `${primary}${source}${saved}`;
+      }
+
+      function messageIdentityBadges(message) {
+        const role = message.senderRole || message.replierRole || "expert";
+        const team = message.senderTeam || message.replierTeam || "";
+        const source = message.senderNameSource || message.replierNameSource || "";
+        const primary = team ? departmentBadge({ team }) : roleBadge(role);
+        const sourceHint = source ? sourceBadge(source) : "";
+        return `${primary}${sourceHint}`;
+      }
+
+      function personIdentityText(row) {
+        return row?.team || roleName(row?.role);
+      }
+
+      function activeProject() {
+        const projects = state.dashboard?.projects || [];
+        if (!state.projectId) return null;
+        return projects.find((item) => item.projectId === state.projectId) || null;
+      }
+
+      function roomTitle() {
+        return activeProject()?.projectName || "群消息流";
+      }
+
+      function renderAttachment(title, note, mark = "图") {
+        return `<div class="lark-attachment">
+          <div class="lark-attachment-icon">${escapeHtml(mark)}</div>
+          <div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(note)}</span></div>
+        </div>`;
+      }
+
+      function imageUrl(messageId, fileKey) {
+        return `/api/message-resource/${encodeURIComponent(messageId || "")}/${encodeURIComponent(fileKey || "")}?type=image`;
+      }
+
+      function renderImageResource(message, item) {
+        if (!message?.messageId || !item?.imageKey) return renderAttachment("图片内容", "缺少图片资源 key，无法展示原图。", "图");
+        const width = Number(item.width || 0);
+        const height = Number(item.height || 0);
+        const style = width > 0 && height > 0 ? `aspect-ratio:${width}/${height}` : "";
+        return `<figure class="lark-image-wrap" style="${escapeHtml(style)}">
+          <img class="lark-image" src="${escapeHtml(imageUrl(message.messageId, item.imageKey))}" loading="lazy" alt="图片消息" onerror="this.parentElement.classList.add('image-error')" />
+          <figcaption class="lark-image-fallback">图片加载失败：${escapeHtml(item.imageKey)}</figcaption>
+        </figure>`;
+      }
+
+      function renderRichItem(item, message) {
+        if (!item) return "";
+        if (item.tag === "img") return renderImageResource(message, item);
+        if (item.tag === "a" && item.href) {
+          return `<a href="${escapeHtml(item.href)}" target="_blank" rel="noreferrer">${escapeHtml(item.text || item.href)}</a>`;
+        }
+        if (item.tag === "at") return `<span class="mention">@${escapeHtml(item.userName || item.text || "用户")}</span>`;
+        if (item.tag === "emotion") return `<span class="subtle">[${escapeHtml(item.emojiType || "表情")}]</span>`;
+        const value = item.text || item.userName || item.href || "";
+        return escapeHtml(value).replace(/(@[^\s@<，。,.!！?？:：；;、]{1,24})/g, `<span class="mention">$1</span>`);
+      }
+
+      function renderRichBlocks(message) {
+        const blocks = message?.richBlocks || [];
+        if (!blocks.length) return "";
+        return blocks
+          .map((line) => {
+            const html = (line || []).map((item) => renderRichItem(item, message)).join("");
+            return html ? `<div class="lark-rich-line">${html}</div>` : "";
+          })
+          .join("");
+      }
+
+      function renderResourceImages(message) {
+        const resources = (message?.resources || []).filter((item) => item?.imageKey || item?.fileKey);
+        if (!resources.length) return "";
+        return resources
+          .map((item) =>
+            renderImageResource(message, {
+              tag: "img",
+              imageKey: item.imageKey || item.fileKey,
+              width: item.width,
+              height: item.height
+            })
+          )
+          .join("");
+      }
+
+      function renderMessageContent(text, msgType, message = null) {
+        const rich = renderRichBlocks(message);
+        if (rich) return rich;
+        const resourceImages = renderResourceImages(message);
+        if (msgType === "image") return resourceImages || renderAttachment("图片消息", "当前消息缺少 image_key，无法展示原图。", "图");
+        const value = String(text || "").trim() || "[无文本内容]";
+        if (/^This message was recalled$/i.test(value)) {
+          return `<span class="recalled-message"${tipAttrs("飞书消息接口返回的撤回占位文本，表示原消息已被发送人撤回；常规历史消息接口拿不到撤回前正文，只能保留这条可审计占位。")}>[消息已撤回]</span>`;
+        }
+        const textValue = resourceImages ? value.replace(/\[img\]|\[图片\]/g, "").trim() : value;
+        const chunks = value.split(/(\[img\]|\[图片\])/g).filter(Boolean);
+        const textHtml = resourceImages
+          ? escapeHtml(textValue)
+              .replace(/(@[^\s@<，。,.!！?？:：；;、]{1,24})/g, `<span class="mention">$1</span>`)
+              .replace(/\n/g, "<br>")
+          : chunks
+              .map((chunk) => {
+                if (chunk === "[img]" || chunk === "[图片]") return renderAttachment("图片内容", "原消息中包含图片，已在文本里保留图片占位。", "图");
+                return escapeHtml(chunk)
+                  .replace(/(@[^\s@<，。,.!！?？:：；;、]{1,24})/g, `<span class="mention">$1</span>`)
+                  .replace(/\n/g, "<br>");
+              })
+              .join("");
+        return `${resourceImages}${textHtml ? `<div class="lark-rich-line">${textHtml}</div>` : ""}`;
+      }
+
+      function buildMessageLookups(messages, replyEdges) {
+        return {
+          byId: new Map((messages || []).filter((message) => message.messageId).map((message) => [message.messageId, message])),
+          replyById: new Map((replyEdges || []).filter((edge) => edge.replyMessageId).map((edge) => [edge.replyMessageId, edge]))
+        };
+      }
+
+      function replyTarget(message, lookups) {
+        const parentId = message.replyToMessageId || message.replyObjectMessageId;
+        const parent = parentId ? lookups.byId.get(parentId) : null;
+        if (parent) return { ...parent, name: displayName(parent), type: parent.msgType };
+        const edge = lookups.replyById.get(message.messageId);
+        if (edge) {
+          return {
+            name: edge.parentSender || "被回复消息",
+            text: edge.parentText,
+            type: edge.parentMsgType,
+            messageId: edge.parentMessageId,
+            richBlocks: edge.parentRichBlocks || [],
+            resources: edge.parentResources || []
+          };
+        }
+        return null;
+      }
+
+      function renderLarkQuote(target) {
+        if (!target?.text) return "";
+        return `<div class="lark-quote"><b>引用 ${escapeHtml(target.name || "上一条消息")} · ${escapeHtml(messageTypeLabel(target.type))}</b>${renderMessageContent(target.text, target.type, target)}</div>`;
+      }
+
+      function messageDateLabel(message) {
+        const text = timeText(message.createTime || message.replyTime);
+        return text.slice(0, 10);
+      }
+
+      function renderLarkMessage(message, lookups = buildMessageLookups([], []), options = {}) {
+        const name = displayName(message);
+        const role = message.senderRole || message.replierRole || "expert";
+        const text = message.text || options.fallbackText || "[无文本内容]";
+        const time = timeText(message.createTime || message.replyTime);
+        const isTarget = Boolean(state.messageSourceFilter?.messageId && message.messageId === state.messageSourceFilter.messageId);
+        const messageIdAttr = message.messageId ? ` data-message-id="${escapeHtml(message.messageId)}"` : "";
+        if ((message.msgType || "") === "system" || role === "system") {
+          return `<div class="lark-system ${isTarget ? "lark-target" : ""}"${messageIdAttr}><span class="lark-time">${escapeHtml(time)}</span> ${escapeHtml(text)}</div>`;
+        }
+        const target = replyTarget(message, lookups);
+        const meta = [
+          message.groupName,
+          message.msgType ? messageTypeLabel(message.msgType) : "",
+          message.messageId ? `消息 ${compactId(message.messageId)}` : "",
+          message.replyObjectMessageId ? `回复 ${compactId(message.replyObjectMessageId)}` : ""
+        ].filter(Boolean);
+        return `<article class="lark-message ${message.questionCandidate ? "lark-candidate" : ""} ${isTarget ? "lark-target" : ""}"${messageIdAttr}>
+          <div class="lark-time">${escapeHtml(time)}</div>
+          <div class="lark-message-head">
+            <div class="lark-sender">
+              <strong>${escapeHtml(name)}</strong>
+              ${messageIdentityBadges(message)}
+              ${message.questionCandidate ? `<span class="badge warn">候选</span>` : ""}
+            </div>
+          </div>
+          <div class="lark-main">
+            ${renderLarkQuote(target)}
+            <div class="lark-content">${renderMessageContent(text, message.msgType, message)}</div>
+          </div>
+          <div class="lark-message-tools">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>
+        </article>`;
+      }
+
+      function renderChatMessage(message, options = {}) {
+        return renderLarkMessage(message, options.lookups || buildMessageLookups([], []), options);
+      }
+
+      function idsForAiItem(item) {
+        return [...(item.evidenceIssueIds || []), ...(item.sourceIssueIds || []), ...(item.sourceMessageIds || [])].filter(Boolean);
+      }
+
+      function relatedAiItems(issueId, ai) {
+        const buckets = [
+          ...(ai.commonQuestions || []).map((item) => ({ type: "常见问题", title: item.question || item.text || "", body: item.suggestedAnswer || "", ids: idsForAiItem(item) })),
+          ...(ai.answerPlaybook || []).map((item) => ({ type: "建议话术", title: item.scenario || "", body: item.recommendedReply || "", ids: idsForAiItem(item) })),
+          ...(ai.projectRhythmImpacts || []).map((item) => ({ type: "项目节奏", title: item.observedImpact || "", body: item.predictedNextPeak ? `预测峰值：${item.predictedNextPeak}` : "", ids: idsForAiItem(item) }))
+        ];
+        return buckets.filter((item) => item.ids.includes(issueId));
+      }
+
+      function periodWindow() {
+        const period = String(state.period || "all");
+        if (period.startsWith("date:")) {
+          const date = period.slice("date:".length);
+          const startMs = Date.parse(`${date}T00:00:00+08:00`);
+          if (Number.isNaN(startMs)) return { startMs: null, endMs: null, label: "全部日期" };
+          return { startMs, endMs: startMs + 24 * 60 * 60 * 1000 - 1, label: date };
+        }
+        if (period.startsWith("since:")) {
+          const date = period.slice("since:".length);
+          const startMs = Date.parse(`${date}T00:00:00+08:00`);
+          if (Number.isNaN(startMs)) return { startMs: null, endMs: null, label: "全部日期" };
+          return { startMs, endMs: null, label: `${date} 至今` };
+        }
+        return { startMs: null, endMs: null, label: state.dashboard?.periods?.[period]?.label || "全部日期" };
+      }
+
+      function periodStartMs() {
+        return periodWindow().startMs;
+      }
+
+      function periodEndMs() {
+        return periodWindow().endMs;
+      }
+
+      function periodLabel() {
+        return periodWindow().label;
+      }
+
+      function compactPeriodLabel() {
+        const period = String(state.period || "all");
+        if (period === "all") return "";
+        if (period.startsWith("date:")) {
+          const date = period.slice("date:".length);
+          const match = date.match(/^\d{4}-(\d{2})-(\d{2})$/);
+          return match ? `${Number(match[1])}/${Number(match[2])}` : "所选日期";
+        }
+        if (period.startsWith("since:")) {
+          const date = period.slice("since:".length);
+          const match = date.match(/^\d{4}-(\d{2})-(\d{2})$/);
+          return match ? `${Number(match[1])}/${Number(match[2])}后` : "所选日期后";
+        }
+        return periodLabel().replace(/\s+/g, "");
+      }
+
+      function scopedStatLabel(label) {
+        const scope = compactPeriodLabel();
+        return scope ? `${scope}${label}` : label;
+      }
+
+      function metricScopeKey(projectId = state.projectId, period = state.period) {
+        return `${projectId || ""}|${period || "all"}`;
+      }
+
+      function shouldLoadDynamicMetrics(projectId = state.projectId) {
+        return Boolean(projectId || periodStartMs() || periodEndMs());
+      }
+
+      function dynamicMetricsForScope(projectId = state.projectId) {
+        const item = state.dynamicMetrics?.[metricScopeKey(projectId)];
+        return item?.metrics || null;
+      }
+
+      async function loadDynamicMetricsForScope(projectId = state.projectId, period = state.period) {
+        if (!shouldLoadDynamicMetrics(projectId)) return;
+        const key = metricScopeKey(projectId, period);
+        if (state.dynamicMetrics?.[key]?.metrics || state.dynamicMetricsLoadingKey === key) return;
+        state.dynamicMetricsLoadingKey = key;
+        $("status").textContent = "动态计算当前范围";
+        const params = new URLSearchParams();
+        const startMs = periodStartMs();
+        const endMs = periodEndMs();
+        if (projectId) params.set("projectId", projectId);
+        if (startMs) params.set("startMs", String(startMs));
+        if (endMs) params.set("endMs", String(endMs));
+        params.set("limit", "50000");
+        try {
+          const response = await fetch(`/api/metrics?${params.toString()}`, { cache: "no-store" });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || !result.ok) throw new Error(result.error || "动态指标计算失败");
+          state.dynamicMetrics[key] = {
+            metrics: result.metrics || emptyMetrics(),
+            total: Number(result.total || 0),
+            returned: Number(result.returned || 0),
+            truncated: Boolean(result.truncated),
+            source: result.source || ""
+          };
+          if (metricScopeKey(state.projectId, state.period) === key) {
+            $("status").textContent = result.truncated
+              ? `已动态计算 ${fmt.format(result.returned || 0)} / ${fmt.format(result.total || 0)} 条`
+              : `已动态计算 ${fmt.format(result.returned || 0)} 条`;
+            renderAll();
+          }
+        } catch (error) {
+          state.dynamicMetrics[key] = { error: error.message };
+          if (metricScopeKey(state.projectId, state.period) === key) $("status").textContent = `动态计算失败：${error.message}`;
+        } finally {
+          if (state.dynamicMetricsLoadingKey === key) state.dynamicMetricsLoadingKey = "";
+        }
+      }
+
+      function scheduleDynamicMetricsRefresh() {
+        if (!shouldLoadDynamicMetrics()) return;
+        const key = metricScopeKey();
+        if (state.dynamicMetrics?.[key]?.metrics || state.dynamicMetricsLoadingKey === key) return;
+        loadDynamicMetricsForScope();
+      }
+
+      function rowMs(row, ...keys) {
+        for (const key of keys) {
+          const value = row?.[key];
+          if (value === undefined || value === null || value === "") continue;
+          const ms = typeof value === "number" ? value : Date.parse(value);
+          if (!Number.isNaN(ms)) return ms;
+        }
+        return 0;
+      }
+
+      function rowsSince(rows, startMs, ...keys) {
+        if (!startMs) return rows || [];
+        return (rows || []).filter((row) => rowMs(row, ...keys) >= startMs);
+      }
+
+      function rowsInWindow(rows, startMs, endMs, ...keys) {
+        return (rows || []).filter((row) => {
+          const ms = rowMs(row, ...keys);
+          if (startMs && ms < startMs) return false;
+          if (endMs && ms > endMs) return false;
+          return true;
+        });
+      }
+
+      function countRows(rows, keyFn) {
+        const map = new Map();
+        for (const row of rows || []) {
+          const key = keyFn(row);
+          if (!key) continue;
+          map.set(key, (map.get(key) || 0) + 1);
+        }
+        return map;
+      }
+
+      function sortedCountRows(map, labelFn = (key) => key) {
+        return [...map.entries()]
+          .map(([key, count]) => ({ key, label: labelFn(key), count }))
+          .sort((a, b) => b.count - a.count);
+      }
+
+      function buildStaffForMessages(messages) {
+        const staff = new Map();
+        for (const message of messages || []) {
+          const id = message.senderId || "unknown";
+          const item =
+            staff.get(id) || {
+              id,
+              name: message.senderName || (id === "unknown" ? "未知发送人" : id),
+              nameSource: message.senderNameSource || "",
+              team: message.senderTeam || "",
+              role: message.senderRole || "expert",
+              senderType: message.senderType || "",
+              isInternal: Boolean(message.isInternal),
+              messageCount: 0,
+              replyCount: 0,
+              handledQuestionCount: 0,
+              questionCount: 0,
+              activeDays: 0,
+              firstTime: "",
+              lastTime: "",
+              recentMessages: [],
+              groupBreakdown: [],
+              messageTypeRows: []
+            };
+          const ms = rowMs(message, "createTimeMs", "createTime");
+          item.messageCount += 1;
+          if (message.isReply) item.replyCount += 1;
+          if (message.questionCandidate) item.questionCount += 1;
+          item._dates = item._dates || new Set();
+          item._dates.add(message.createDate || timeText(message.createTime).slice(0, 10));
+          item._firstMs = item._firstMs ? Math.min(item._firstMs, ms) : ms;
+          item._lastMs = Math.max(item._lastMs || 0, ms);
+          item.firstTime = item._firstMs ? new Date(item._firstMs).toISOString() : item.firstTime;
+          item.lastTime = item._lastMs ? new Date(item._lastMs).toISOString() : item.lastTime;
+          item._groups = item._groups || new Map();
+          const groupKey = message.chatId || message.groupName || "unknown";
+          const group =
+            item._groups.get(groupKey) || {
+              chatId: message.chatId || "",
+              groupName: message.groupName || "未知群",
+              projectName: message.projectName || "",
+              messageCount: 0,
+              replyCount: 0,
+              questionCount: 0,
+              firstTime: "",
+              lastTime: "",
+              _firstMs: 0,
+              _lastMs: 0
+            };
+          group.messageCount += 1;
+          if (message.isReply) group.replyCount += 1;
+          if (message.questionCandidate) group.questionCount += 1;
+          group._firstMs = group._firstMs ? Math.min(group._firstMs, ms) : ms;
+          group._lastMs = Math.max(group._lastMs || 0, ms);
+          group.firstTime = group._firstMs ? new Date(group._firstMs).toISOString() : group.firstTime;
+          group.lastTime = group._lastMs ? new Date(group._lastMs).toISOString() : group.lastTime;
+          item._groups.set(groupKey, group);
+          item._types = item._types || new Map();
+          item._types.set(message.msgType || "unknown", (item._types.get(message.msgType || "unknown") || 0) + 1);
+          item.recentMessages.push({
+            messageId: message.messageId,
+            chatId: message.chatId,
+            createTime: message.createTime,
+            groupName: message.groupName,
+            msgType: message.msgType,
+            isReply: message.isReply,
+            text: message.text
+          });
+          staff.set(id, item);
+        }
+        return [...staff.values()]
+          .map((item) => ({
+            ...item,
+            activeDays: item._dates?.size || 0,
+            replyRatio: item.messageCount ? Math.round((item.replyCount / item.messageCount) * 100) : 0,
+            avgLatencySeconds: null,
+            groupBreakdown: [...(item._groups?.values() || [])]
+              .map(({ _firstMs, _lastMs, ...group }) => group)
+              .sort((a, b) => b.messageCount - a.messageCount),
+            messageTypeRows: sortedCountRows(item._types || new Map(), messageTypeLabel),
+            recentMessages: item.recentMessages.sort((a, b) => rowMs(b, "createTime") - rowMs(a, "createTime")).slice(0, 12)
+          }))
+          .map(({ _dates, _firstMs, _lastMs, _groups, _types, ...item }) => item)
+          .sort((a, b) => b.messageCount - a.messageCount);
+      }
+
+      function deriveMetricsForPeriod(metrics, startMs, endMs = null) {
+        if (!metrics) metrics = emptyMetrics();
+        if (!startMs && !endMs) return metrics;
+        const messages = rowsInWindow(metrics.messages || [], startMs, endMs, "createTimeMs", "createTime");
+        const replyEdges = rowsInWindow(metrics.replyEdges || [], startMs, endMs, "replyTimeMs", "replyTime");
+        const analysisCandidates = rowsInWindow(metrics.analysisCandidates || [], startMs, endMs, "questionTimeMs", "questionTime");
+        const questionCandidates = rowsInWindow(
+          metrics.questionCandidates || [],
+          startMs,
+          endMs,
+          "questionTimeMs",
+          "questionTime",
+          "createTimeMs",
+          "createTime"
+        );
+        const byDateMap = countRows(messages, (message) => message.createDate || timeText(message.createTime).slice(0, 10));
+        const byHourMap = countRows(messages, (message) => timeText(message.createTime).slice(11, 13));
+        const byTypeMap = countRows(messages, (message) => message.msgType || "unknown");
+        const staff = buildStaffForMessages(messages);
+        const first = messages[0];
+        const last = messages[messages.length - 1];
+        const exactDate =
+          startMs && endMs && endMs - startMs <= 24 * 60 * 60 * 1000 ? shanghaiDateFromMs(startMs) : "";
+        const fullDateCount = exactDate ? Number((metrics.byDate || []).find((row) => row.date === exactDate)?.count || 0) : null;
+        const messageCount = fullDateCount !== null ? fullDateCount : messages.length;
+        const fullDateHourRows = exactDate && metrics.byDateHour ? metrics.byDateHour[exactDate] || [] : [];
+        const hourlyMessageCount = fullDateHourRows.length
+          ? fullDateHourRows.map((row) => ({ slot: row.slot || "unknown", count: Number(row.count || 0) }))
+          : [...byHourMap.entries()]
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([slot, count]) => ({ slot, count }));
+        const byDate = [...byDateMap.entries()]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([date, count]) => ({ date, count }));
+        return {
+          ...metrics,
+          messageCount,
+          firstTime: first?.createTime || "",
+          lastTime: last?.createTime || "",
+          activeDayCount: exactDate ? (messageCount > 0 ? 1 : 0) : byDate.length,
+          uniqueSenderCount: staff.length,
+          internalSenderCount: staff.filter((row) => row.isInternal).length,
+          questionCandidateCount: analysisCandidates.length || questionCandidates.length,
+          analysisCandidateCount: analysisCandidates.length,
+          replyCount: replyEdges.length,
+          byDate,
+          byDateHour: metrics.byDateHour || {},
+          byHour: fullDateHourRows.length
+            ? Object.fromEntries(fullDateHourRows.map((row) => [row.slot || "unknown", Number(row.count || 0)]))
+            : Object.fromEntries(byHourMap.entries()),
+          byMsgType: Object.fromEntries(byTypeMap.entries()),
+          messageTypeRows: sortedCountRows(byTypeMap, messageTypeLabel),
+          coreMetricSummary: {
+            ...(metrics.coreMetricSummary || {}),
+            hourlyMessageCount,
+            messageTypeDistribution: sortedCountRows(byTypeMap, messageTypeLabel)
+          },
+          messages,
+          replyEdges,
+          analysisCandidates,
+          questionCandidates,
+          staff,
+          internalStaff: staff.filter((row) => row.isInternal)
+        };
+      }
+
+      function currentMetrics() {
+        const dynamic = !state.projectId ? dynamicMetricsForScope("") : null;
+        if (dynamic) return dynamic;
+        const base = state.dashboard.periods.all.metrics;
+        return deriveMetricsForPeriod(base, periodStartMs(), periodEndMs()) || state.dashboard.periods[state.period]?.metrics || base;
+      }
+
+      function projectMetrics() {
+        const dynamic = dynamicMetricsForScope();
+        if (dynamic) return dynamic;
+        const metrics = currentMetrics();
+        const project = activeProject();
+        if (!state.projectId) return metrics;
+        const base = project?.periods?.all?.metrics || project?.metrics || emptyMetrics();
+        return deriveMetricsForPeriod(base, periodStartMs(), periodEndMs());
+      }
+
+      function calendarMetrics() {
+        if (state.projectId) {
+          const project = activeProject();
+          return project?.periods?.all?.metrics || project?.metrics || emptyMetrics();
+        }
+        return state.dashboard?.periods?.all?.metrics || emptyMetrics();
+      }
+
+      function table(rows, columns) {
+        if (!rows?.length) return `<div class="empty">暂无数据</div>`;
+        return `<table><thead><tr>${columns.map(([label]) => `<th>${escapeHtml(label)}</th>`).join("")}</tr></thead><tbody>${rows
+          .map((row) => `<tr>${columns.map(([, render]) => `<td>${render(row)}</td>`).join("")}</tr>`)
+          .join("")}</tbody></table>`;
+      }
+
+      function monthKey(date) {
+        return String(date || "").slice(0, 7);
+      }
+
+      function monthLabel(month) {
+        if (!month) return "-";
+        const [year, value] = month.split("-");
+        return `${year}年${value}月`;
+      }
+
+      function calendarCells(month, countByDate) {
+        const [year, value] = String(month || "").split("-").map(Number);
+        if (!year || !value) return [];
+        const firstDate = new Date(`${month}-01T00:00:00+08:00`);
+        const firstWeekday = firstDate.getDay();
+        const daysInMonth = new Date(year, value, 0).getDate();
+        const cells = Array.from({ length: firstWeekday }, () => ({ blank: true }));
+        for (let day = 1; day <= daysInMonth; day += 1) {
+          const date = `${month}-${String(day).padStart(2, "0")}`;
+          cells.push({ date, day, count: countByDate.get(date) || 0 });
+        }
+        return cells;
+      }
+
+      function renderPeriods() {
+        const periods = state.dashboard.periods || {};
+        if (!periods[state.period] && !String(state.period || "").startsWith("date:") && !String(state.period || "").startsWith("since:")) state.period = "all";
+        const activeDate = String(state.period || "").startsWith("date:")
+          ? state.period.slice("date:".length)
+          : String(state.period || "").startsWith("since:")
+            ? state.period.slice("since:".length)
+            : "";
+        const active = activeDate ? { label: periodLabel() } : periods[state.period] || periods.all || {};
+        const dateRows = calendarMetrics().byDate || [];
+        const countByDate = new Map(dateRows.map((row) => [row.date, Number(row.count || 0)]));
+        const monthSet = new Set(dateRows.map((row) => monthKey(row.date)).filter(Boolean));
+        if (activeDate) monthSet.add(monthKey(activeDate));
+        const months = [...monthSet].sort();
+        const latestMonth = months[months.length - 1] || monthKey(activeDate) || monthKey(new Date().toISOString());
+        if (activeDate) state.calendarMonth = monthKey(activeDate);
+        if (!state.calendarMonth || !months.includes(state.calendarMonth)) state.calendarMonth = latestMonth;
+        const monthIndex = Math.max(0, months.indexOf(state.calendarMonth));
+        const prevMonth = months[monthIndex - 1] || "";
+        const nextMonth = months[monthIndex + 1] || "";
+        $("activePeriod").textContent = active.label || "全部";
+        $("periods").innerHTML = `<div class="period-calendar">
+          <button class="period period-reset ${state.period === "all" ? "active" : ""}" data-period="all">全部日期</button>
+          <div class="calendar-head">
+            <button class="action-btn secondary calendar-nav" data-calendar-month="${escapeHtml(prevMonth)}" ${prevMonth ? "" : "disabled"}>‹</button>
+            <div class="calendar-title">${escapeHtml(monthLabel(state.calendarMonth))}</div>
+            <button class="action-btn secondary calendar-nav" data-calendar-month="${escapeHtml(nextMonth)}" ${nextMonth ? "" : "disabled"}>›</button>
+          </div>
+          <div class="calendar-weekdays">${["日", "一", "二", "三", "四", "五", "六"].map((day) => `<span>${day}</span>`).join("")}</div>
+          <div class="calendar-days">${calendarCells(state.calendarMonth, countByDate)
+            .map((cell) => {
+              if (cell.blank) return `<div class="calendar-blank"></div>`;
+              const key = `date:${cell.date}`;
+              return `<button class="period calendar-day ${cell.count ? "" : "no-data"} ${key === state.period ? "active" : ""}" data-period="${escapeHtml(key)}">
+                <strong>${fmt.format(cell.day)}</strong>
+                <span>${cell.count ? `${fmt.format(cell.count)}条` : ""}</span>
+              </button>`;
+            })
+            .join("")}</div>
+        </div>`;
+        document.querySelectorAll("[data-calendar-month]").forEach((button) => {
+          button.addEventListener("click", () => {
+            if (!button.dataset.calendarMonth) return;
+            state.calendarMonth = button.dataset.calendarMonth;
+            renderAll();
+          });
+        });
+        document.querySelectorAll(".period").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.period = button.dataset.period;
+            const selectedDate = state.period?.startsWith("date:")
+              ? state.period.slice("date:".length)
+              : state.period?.startsWith("since:")
+                ? state.period.slice("since:".length)
+                : "";
+            if (selectedDate) state.calendarMonth = monthKey(selectedDate);
+            renderAll();
+          });
+        });
+      }
+
+      function projectTags(project) {
+        const chats = project.chats || [];
+        const names = [project.projectName, ...chats.map((chat) => chat.groupName || chat.chatName || "")].join(" ");
+        const tags = new Set();
+        if (chats.some((chat) => chat.external)) tags.add("external");
+        if (chats.length && chats.every((chat) => !chat.external)) tags.add("internal");
+        if (/审核|质检|复核/.test(names)) tags.add("audit");
+        tags.add("project");
+        return tags;
+      }
+
+      function projectTagLabel(key) {
+        return { all: "全部", external: "外部", internal: "内部", project: "项目", audit: "审核" }[key] || key;
+      }
+
+      function renderProjects() {
+        const projects = state.dashboard.projects || [];
+        if (state.projectId && !projects.some((project) => project.projectId === state.projectId)) state.projectId = "";
+        const filter = state.projectTagFilter || "all";
+        const visibleProjects = filter === "all" ? projects : projects.filter((project) => projectTags(project).has(filter));
+        if (state.projectId && filter !== "all" && !visibleProjects.some((project) => project.projectId === state.projectId)) state.projectId = "";
+        $("projectCount").textContent = filter === "all" ? fmt.format(projects.length) : `${fmt.format(visibleProjects.length)}/${fmt.format(projects.length)}`;
+        const allMetrics = currentMetrics();
+        const messageLabel = scopedStatLabel("消息");
+        const senderLabel = scopedStatLabel("发言人");
+        const filters = ["all", "external", "internal", "project", "audit"]
+          .map(
+            (key) =>
+              `<button type="button" class="${filter === key ? "active" : ""}" data-project-filter="${escapeHtml(key)}">${escapeHtml(projectTagLabel(key))}</button>`
+          )
+          .join("");
+        const allButton = `<button class="project ${state.projectId ? "" : "active"}" data-project=""${tipAttrs("这里显示全部项目已入库消息；左侧日历和顶部指标使用同一个项目/时间范围。点某一天时，卡片只显示当天真实入库数据。")}><strong>全部项目</strong><div class="stats"><span>${messageLabel} ${fmt.format(allMetrics.messageCount || 0)}</span><span>${senderLabel} ${fmt.format(allMetrics.uniqueSenderCount || 0)}</span></div></button>`;
+        $("projectList").innerHTML = `<div class="project-filter">${filters}</div>` + allButton + visibleProjects
+          .map((project) => {
+            const m = deriveMetricsForPeriod(project.periods?.all?.metrics || project.metrics, periodStartMs(), periodEndMs());
+            const smallNote = Number(m.messageCount || 0) < 100 ? "如果这是刚加入的群，这里只代表当前已入库历史；刷新会继续发现群并同步，首次同步会回看更长历史。" : "";
+            const pending = project.pendingSync ? `<span class="badge draft">待同步</span>` : "";
+            const tagText = [...projectTags(project)].filter((tag) => tag !== "project").map(projectTagLabel).join(" · ");
+            return `<button class="project ${state.projectId === project.projectId ? "active" : ""}" data-project="${escapeHtml(project.projectId)}"${tipAttrs(`这里是该项目在当前时间范围内的已入库消息，口径与左侧日历一致。${tagText ? `标签：${tagText}。` : ""}${smallNote}`)}><strong>${escapeHtml(project.projectName)} ${pending}</strong><div class="stats"><span>${messageLabel} ${fmt.format(m.messageCount || 0)}</span><span>${senderLabel} ${fmt.format(m.uniqueSenderCount || 0)}</span></div></button>`;
+          })
+          .join("");
+        document.querySelectorAll("[data-project-filter]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.projectTagFilter = button.dataset.projectFilter || "all";
+            renderAll();
+          });
+        });
+        document.querySelectorAll(".project").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.projectId = button.dataset.project;
+            renderAll();
+          });
+          });
+      }
+
+      function defaultMessageSourceFilter() {
+        return {
+          projectId: state.projectId || "",
+          startMs: periodStartMs() || "",
+          endMs: periodEndMs() || "",
+          q: state.messageTextSearch.trim(),
+          senderQ: state.messageSenderSearch.trim(),
+          metaQ: state.messageMetaSearch.trim(),
+          label: `${state.projectId ? activeProject()?.projectName || "当前项目" : "全部项目"} · ${periodLabel()}`,
+          defaultScope: true
+        };
+      }
+
+      function renderMessages() {
+        if (!state.messageSourceFilter && state.tab === "messages") {
+          openMessageSource(defaultMessageSourceFilter(), { keepSearch: true, noActivate: true });
+        } else if (
+          state.messageSourceFilter?.defaultScope &&
+          !state.messageSourceLoading &&
+          state.messageSourceFilter.key !== sourceKey(defaultMessageSourceFilter())
+        ) {
+          openMessageSource(defaultMessageSourceFilter(), { keepSearch: true, noActivate: true });
+        }
+        const metrics = projectMetrics();
+        const sourceMode = Boolean(state.messageSourceFilter);
+        const rows = sourceMode ? state.messageSourceRows || [] : metrics.messages || [];
+        const replyEdges = sourceMode ? state.messageSourceReplyEdges || [] : metrics.replyEdges || [];
+        const textQuery = state.messageTextSearch.trim().toLowerCase();
+        const senderQuery = state.messageSenderSearch.trim().toLowerCase();
+        const metaQuery = state.messageMetaSearch.trim().toLowerCase();
+        const scope = sourceMode
+          ? state.messageSourceFilter?.label || "溯源结果"
+          : state.projectId
+            ? activeProject()?.projectName || "当前项目"
+            : "全部项目";
+        const scopeKey = `${sourceMode ? state.messageSourceFilter?.key || "source" : state.projectId || "all"}|${state.period || "all"}|${textQuery}|${senderQuery}|${metaQuery}`;
+        if (state.messageScopeKey !== scopeKey) {
+          state.messageScopeKey = scopeKey;
+          state.messageVisibleCount = textQuery || senderQuery || metaQuery ? 500 : 300;
+        }
+        if (sourceMode && state.messageSourceLoading) {
+          $("messageCount").textContent = "加载中";
+          $("messageScopeNote").textContent = `${scope} · 正在从原始消息读取溯源数据`;
+          $("messageFeed").innerHTML = `<div class="empty">正在加载原始消息…</div>`;
+          $("messageLoadControls").innerHTML = `<button type="button" class="action-btn secondary" data-clear-source="1">退出溯源</button>`;
+          return;
+        }
+        const matches = rows.filter((message) => {
+          if (textQuery && !String(message.text || "").toLowerCase().includes(textQuery)) return false;
+          if (
+            senderQuery &&
+            ![message.senderName, message.senderId].filter(Boolean).some((value) => String(value).toLowerCase().includes(senderQuery))
+          ) {
+            return false;
+          }
+          if (
+            metaQuery &&
+            ![message.groupName, message.projectName, message.messageId, message.msgType, message.chatId]
+              .filter(Boolean)
+              .some((value) => String(value).toLowerCase().includes(metaQuery))
+          ) {
+            return false;
+          }
+          return true;
+        });
+        const sorted = [...matches].sort((a, b) => rowMs(b, "createTimeMs", "createTime") - rowMs(a, "createTimeMs", "createTime"));
+        const visibleCount = Math.min(sorted.length, state.messageVisibleCount || 300);
+        const visible = sorted.slice(0, visibleCount);
+        const totalCount = sourceMode ? Number(state.messageSourceTotal || rows.length || 0) : Number(metrics.messageCount || rows.length || 0);
+        const preloadNote = sourceMode
+          ? `溯源来自${state.messageSourceSource === "bytehouse" ? " ByteHouse" : "原始消息文件"}，本次返回 ${fmt.format(rows.length)} / ${fmt.format(totalCount)} 条。`
+          : metrics.messagesTruncated
+          ? `为保证页面流畅，当前预载最近 ${fmt.format(rows.length)} / ${fmt.format(totalCount)} 条；搜索和展开先在预载范围内执行。`
+          : `当前范围已预载 ${fmt.format(rows.length)} 条。`;
+        $("messageCount").textContent = `${fmt.format(matches.length)} / ${fmt.format(totalCount)} 条`;
+        $("messageScopeNote").textContent = `${scope} · ${periodLabel()} · 已展示 ${fmt.format(visible.length)} / ${fmt.format(matches.length)} 条，按时间倒序。${preloadNote}`;
+        $("messageTextSearch").value = state.messageTextSearch;
+        $("messageSenderSearch").value = state.messageSenderSearch;
+        $("messageMetaSearch").value = state.messageMetaSearch;
+        $("messageTextSearch").oninput = (event) => {
+          state.messageTextSearch = event.target.value;
+          state.messageScopeKey = "";
+          if (state.messageSourceFilter?.defaultScope) state.messageSourceFilter = null;
+          renderMessages();
+        };
+        $("messageSenderSearch").oninput = (event) => {
+          state.messageSenderSearch = event.target.value;
+          state.messageScopeKey = "";
+          if (state.messageSourceFilter?.defaultScope) state.messageSourceFilter = null;
+          renderMessages();
+        };
+        $("messageMetaSearch").oninput = (event) => {
+          state.messageMetaSearch = event.target.value;
+          state.messageScopeKey = "";
+          if (state.messageSourceFilter?.defaultScope) state.messageSourceFilter = null;
+          renderMessages();
+        };
+        const lookups = buildMessageLookups(rows, replyEdges);
+        $("messageFeed").innerHTML = visible.length
+          ? visible.map((message) => renderLarkMessage(message, lookups)).join("")
+          : `<div class="empty">没有匹配消息。</div>`;
+        if (sourceMode && state.messageSourceFilter?.messageId && visible.length) {
+          requestAnimationFrame(() => {
+            const target = [...document.querySelectorAll("#messageFeed [data-message-id]")].find(
+              (node) => node.dataset.messageId === state.messageSourceFilter.messageId
+            );
+            if (target) target.scrollIntoView({ block: "center" });
+          });
+        }
+        const remain = sorted.length - visible.length;
+        $("messageLoadControls").innerHTML = sourceMode
+          ? state.messageSourceFilter?.defaultScope
+            ? `<span class="mini-note" style="margin:0;">当前消息流直接来自 ${state.messageSourceSource === "bytehouse" ? "ByteHouse" : "原始消息文件"}，图片资源会按需加载。</span>`
+            : `<span class="mini-note" style="margin:0;margin-right:auto;">${escapeHtml(scope)}</span><button type="button" class="action-btn secondary" data-clear-source="1">退出溯源</button>`
+          : sorted.length
+            ? remain > 0
+              ? `<span class="mini-note" style="margin:0;margin-right:auto;">剩余 ${fmt.format(remain)} 条</span>
+              <button type="button" class="action-btn" data-message-load="more">再加载 500</button>
+              <button type="button" class="action-btn" data-message-load="all">显示已预载全部</button>`
+              : `<span class="mini-note" style="margin:0;">已展示当前范围全部 ${fmt.format(sorted.length)} 条</span>`
+            : "";
+      }
+
+      function sourceKey(filter) {
+        return [
+          filter.senderId || "",
+          filter.chatId || "",
+          filter.messageId || "",
+          filter.projectId || "",
+          filter.startMs || "",
+          filter.endMs || "",
+          filter.q || "",
+          filter.senderQ || "",
+          filter.metaQ || "",
+          filter.defaultScope ? "default" : ""
+        ].join("|");
+      }
+
+      async function openMessageSource(filter, options = {}) {
+        const clean = {
+          senderId: filter.senderId || "",
+          chatId: filter.chatId || "",
+          messageId: filter.messageId || "",
+          projectId: filter.projectId || "",
+          startMs: filter.startMs || "",
+          endMs: filter.endMs || "",
+          q: filter.q || "",
+          senderQ: filter.senderQ || "",
+          metaQ: filter.metaQ || "",
+          label: filter.label || "消息溯源",
+          defaultScope: Boolean(filter.defaultScope)
+        };
+        clean.key = sourceKey(clean);
+        state.messageSourceFilter = clean;
+        state.messageSourceRows = [];
+        state.messageSourceReplyEdges = [];
+        state.messageSourceTotal = 0;
+        state.messageSourceSource = "";
+        state.messageSourceLoading = true;
+        if (!options.keepSearch) {
+          state.messageTextSearch = "";
+          state.messageSenderSearch = "";
+          state.messageMetaSearch = "";
+        }
+        if (!options.noActivate) activateTab("messages");
+        const params = new URLSearchParams();
+        if (clean.senderId) params.set("senderId", clean.senderId);
+        if (clean.chatId) params.set("chatId", clean.chatId);
+        if (clean.messageId) params.set("messageId", clean.messageId);
+        if (clean.projectId) params.set("projectId", clean.projectId);
+        if (clean.startMs) params.set("startMs", clean.startMs);
+        if (clean.endMs) params.set("endMs", clean.endMs);
+        if (clean.q) params.set("q", clean.q);
+        if (clean.senderQ) params.set("senderQ", clean.senderQ);
+        if (clean.metaQ) params.set("metaQ", clean.metaQ);
+        params.set("limit", clean.messageId ? "80" : clean.defaultScope ? "500" : "240");
+        try {
+          const response = await fetch(`/api/messages?${params.toString()}`, { cache: "no-store" });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || !result.ok) throw new Error(result.error || "消息溯源失败");
+          state.messageSourceRows = result.messages || [];
+          state.messageSourceReplyEdges = result.replyEdges || [];
+          state.messageSourceTotal = Number(result.total || state.messageSourceRows.length || 0);
+          state.messageSourceSource = result.source || "";
+          if (clean.messageId) {
+            const target = state.messageSourceRows.find((message) => message.messageId === clean.messageId);
+            if (target?.groupName) {
+              clean.label = `${target.groupName} · 单条上下文`;
+              state.messageSourceFilter = clean;
+            }
+          }
+          $("status").textContent = `已溯源 ${fmt.format(state.messageSourceRows.length)} / ${fmt.format(state.messageSourceTotal)} 条`;
+        } catch (error) {
+          state.messageSourceRows = [];
+          state.messageSourceReplyEdges = [];
+          state.messageSourceTotal = 0;
+          state.messageSourceSource = "";
+          $("status").textContent = "溯源失败";
+          alert(error.message);
+        } finally {
+          state.messageSourceLoading = false;
+          renderMessages();
+        }
+      }
+
+      function clearMessageSource() {
+        state.messageSourceFilter = null;
+        state.messageSourceRows = [];
+        state.messageSourceReplyEdges = [];
+        state.messageSourceTotal = 0;
+        state.messageSourceSource = "";
+        state.messageSourceLoading = false;
+        state.messageScopeKey = "";
+        renderMessages();
+      }
+
+      function renderKpis() {
+        const m = projectMetrics();
+        const activeDays = Number(m.activeDayCount || (m.byDate || []).filter((row) => Number(row.count || 0) > 0).length || 0);
+        const items = [
+          { label: "消息", value: fmt.format(m.messageCount || 0), note: "已入库消息", badge: "real", tip: "来自消息表，按当前项目和时间范围过滤后直接计数；不使用规则召回、模型判断或 mock 数据。" },
+          { label: "发言人", value: fmt.format(m.uniqueSenderCount || 0), note: `内部 ${fmt.format(m.internalSenderCount || 0)}`, badge: "real", tip: "按 sender_id 去重；内部人数来自人员表和飞书通讯录回写，不是规则推断结论。" },
+          { label: "回复引用", value: fmt.format(m.replyCount || 0), note: "飞书回复字段", badge: "real", tip: "来自飞书消息的 is_reply / reply_to_message_id / 引用边字段，只统计可见回复引用，不推断私聊或无引用跟进。" },
+          { label: "活跃天", value: fmt.format(activeDays), note: "有消息日期", badge: "real", tip: "按 create_date 中实际有消息的日期去重；点选单日时应为 1 或 0。" },
+          {
+            label: "首条消息",
+            value: compactTimeValue(m.firstTime),
+            note: "最早 create_time",
+            badge: "real",
+            tip: "当前项目和时间范围内最早一条入库消息的 create_time。"
+          },
+          { label: "最新消息", value: compactTimeValue(m.lastTime), note: "最新 create_time", badge: "real", tip: "当前项目和时间范围内最新一条入库消息的 create_time。" }
+        ];
+        $("kpis").innerHTML = items
+          .map((item) => {
+            const tipIcon = item.tip ? `<span class="tip-mark"${tipAttrs(item.tip)} aria-label="说明">?</span>` : "";
+            return `<div class="metric"><span class="metric-title">${escapeHtml(item.label)} <span class="badge ${item.badge}" style="font-size:10px;padding:1px 6px;">${escapeHtml(item.badgeText || badgeShort(item.badge))}</span>${tipIcon}</span><b>${escapeHtml(String(item.value))}</b><span>${escapeHtml(item.note)}</span></div>`;
+          })
+          .join("");
+      }
+
+      function renderStorageStatus() {
+        const storage = state.dashboard?.storageStatus || {};
+        if (!storage.ok) {
+          $("storageStatus").textContent = "数据库未初始化";
+          return;
+        }
+        const peopleText = storage.peopleCount ? ` · 人员 ${fmt.format(storage.peopleCount)} 人` : "";
+        $("storageStatus").textContent = `数据库 ${fmt.format(storage.messageCount || 0)} 条${peopleText}`;
+      }
+
+      function badgeShort(kind) {
+        return { real: "入库", draft: "待复核", ai: "模型", warn: "待审", bad: "缺" }[kind] || kind;
+      }
+
+      function aiStatusCard(ai) {
+        if (!ai || ai.enabled === false) return { value: "未启用", note: "AGENT_AI_ENABLED=false", badge: "warn" };
+        if (!ai.configured) return { value: "未配置", note: "缺 API key 或 endpoint", badge: "bad" };
+        const status = ai.status || "unknown";
+        if (status === "ready") return { value: "就绪", note: shortModel(ai.model) || "接口可用", badge: "ai" };
+        if (status === "error") return { value: "异常", note: shortModel(ai.model) || "请检查日志", badge: "bad" };
+        return { value: status, note: shortModel(ai.model) || "未知状态", badge: "warn" };
+      }
+
+      function shortModel(model) {
+        if (!model) return "";
+        return String(model).split("/").pop();
+      }
+
+      function compactTimeValue(value) {
+        const text = timeText(value);
+        if (!text || text === "-") return "—";
+        const match = text.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);
+        return match ? `${match[2]}-${match[3]} ${match[4]}:${match[5]}` : text.slice(0, 16);
+      }
+
+      function formatDuration(sec) {
+        const s = Number(sec || 0);
+        if (!s) return "—";
+        if (s < 60) return `${Math.round(s)} 秒`;
+        const min = s / 60;
+        if (min < 60) return `${min.toFixed(min < 10 ? 1 : 0)} 分钟`;
+        return `${(min / 60).toFixed(1)} 小时`;
+      }
+
+      function highPriorityRatioLabel(rows) {
+        const list = rows || [];
+        if (!list.length) return "—";
+        let high = 0;
+        let total = 0;
+        for (const row of list) {
+          const c = Number(row.count || 0);
+          total += c;
+          if (row.key === "P0" || row.key === "P1") high += c;
+        }
+        if (!total) return "—";
+        return `${Math.round((high / total) * 100)}%`;
+      }
+
+      function renderStaffingPreview() {
+        const m = projectMetrics();
+        const draft = m.ruleDraft || {};
+        const slots = (m.hourlyStaffing && m.hourlyStaffing.length ? m.hourlyStaffing : draft.hourlyStaffing) || [];
+        const recent = slots.slice(-6);
+        const titleScope = state.period === "all" && !state.projectId ? "近期" : periodLabel();
+        $("staffingPreviewTitle").textContent = `${titleScope}负载`;
+        if (!recent.length) {
+          $("staffingPreview").innerHTML = `<div class="empty">当前范围暂无负载候选</div>`;
+          $("staffingPreviewNote").textContent = "";
+          return;
+        }
+        $("staffingPreview").innerHTML = `<div class="staffing-preview">${recent
+          .map((slot) => {
+            const head = Number(slot.suggestedHeadcount || 0);
+            const high = Number(slot.highPriorityCount || 0);
+            const cls = high >= 3 ? " is-high" : "";
+            const tip =
+              `问题 ${slot.issueCount || 0}，高优 ${high}，工作量 ${slot.workloadMinutes || 0}m。` +
+              `人数=ceil(${slot.workloadMinutes || 0}/45/80%)=${head}，复核后重算。`;
+            return `<div class="staffing-slot${cls}"${tipAttrs(tip)}>
+              <span class="slot-time">${escapeHtml(String(slot.slot || "").slice(5))}</span>
+              <span class="slot-head">${fmt.format(head)} 人</span>
+              <span class="slot-meta">问题 ${fmt.format(slot.issueCount || 0)} · 高优 ${fmt.format(high)} · 工作量 ${fmt.format(slot.workloadMinutes || 0)}m</span>
+            </div>`;
+          })
+          .join("")}</div>`;
+        const sm = (state.dashboard && state.dashboard.staffingModel) || {};
+        $("staffingPreviewNote").textContent = sm.formula
+          ? `公式：${sm.formula}（单人 ${sm.effectiveWorkMinutesPerPerson || 45}m，目标利用率 ${Math.round((sm.targetUtilization || 0.8) * 100)}%）。校准方式：运行复核或人工处理候选后重建 dashboard；未校准前只看负载趋势，不直接当排班结论。`
+          : "";
+      }
+
+      function renderSlaTraffic() {
+        const m = projectMetrics();
+        const badge = $("slaBadge");
+        badge.className = "badge real";
+        badge.textContent = "飞书字段";
+        badge.setAttribute("data-tip", "按飞书原始 msg_type 字段聚合：text、post、image、sticker、system 等，不使用规则候选或模型判断。");
+        renderBars("slaTraffic", m.messageTypeRows || m.coreMetricSummary?.messageTypeDistribution || []);
+      }
+
+      function slaMetric(label, value, note, tip) {
+        return `<div class="sla-light is-pending"${tipAttrs(tip)}>
+          <div class="light-head"><span class="light-dot"></span>${escapeHtml(label)}</div>
+          <div class="light-value">${escapeHtml(String(value || "—"))}</div>
+          <div class="light-note">${escapeHtml(note)}</div>
+        </div>`;
+      }
+
+      function slaLight(label, rate, note, tip) {
+        if (rate == null) {
+          return `<div class="sla-light is-pending"${tipAttrs(tip || note)}>
+            <div class="light-head"><span class="light-dot"></span>${escapeHtml(label)}</div>
+            <div class="light-value">—</div>
+            <div class="light-note">${escapeHtml(note)}</div>
+          </div>`;
+        }
+        const pct = Number(rate || 0);
+        const cls = pct >= 0.8 ? "is-good" : "is-bad";
+        return `<div class="sla-light ${cls}"${tipAttrs(tip || note)}>
+          <div class="light-head"><span class="light-dot"></span>${escapeHtml(label)}</div>
+          <div class="light-value">${(pct * 100).toFixed(1)}%</div>
+          <div class="light-note">${escapeHtml(note)}</div>
+        </div>`;
+      }
+
+      function renderPriorityStrip() {
+        const m = projectMetrics();
+        const total = Number(m.messageCount || 0);
+        const reply = Number(m.replyCount || 0);
+        const normal = Math.max(0, total - reply);
+        const edges = (m.replyEdges || []).filter((edge) => edge?.replyMessageId || edge?.parentMessageId).length;
+        const cards = [
+          { key: "全部", count: total, label: "当前范围入库消息", tip: "消息表按当前项目和时间范围过滤后的总行数。" },
+          { key: "回复", count: reply, label: "is_reply=1", tip: "飞书消息原始回复字段或已解析 reply_to_message_id 命中的消息数。" },
+          { key: "普通", count: normal, label: "非回复消息", tip: "总消息数减去回复消息数，用于区分普通发言和显式回复。" },
+          { key: "引用边", count: edges || reply, label: "可见父子链路", tip: "reply_edges 或回复字段里能看到父消息关系的数量；没有做未回复推断。" }
+        ];
+        $("priorityStrip").innerHTML = `<div class="priority-strip">${cards
+          .map((row) => `<div class="priority-pill"${tipAttrs(row.tip)}>
+              <div class="pill-key">${escapeHtml(row.key)}</div>
+              <div class="pill-count">${fmt.format(row.count || 0)}</div>
+              <div class="pill-label">${escapeHtml(row.label)}</div>
+            </div>`)
+          .join("")}</div>`;
+        $("priorityStripNote").textContent = "全部来自消息字段和回复引用边；不展示规则候选、优先级或估算结论。";
+      }
+
+      function renderBars(id, rows, labelKey = "label", valueKey = "count") {
+        const max = Math.max(...(rows || []).map((row) => Number(row[valueKey] || 0)), 0);
+        $(id).innerHTML = rows?.length
+          ? `<div class="bars">${rows
+              .slice(0, 12)
+              .map((row) => {
+                const value = Number(row[valueKey] || 0);
+                const width = max ? Math.max(4, Math.round((value / max) * 100)) : 0;
+                return `<div class="bar-row"><span class="label">${escapeHtml(row[labelKey] || row.key)}</span><div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div><b>${fmt.format(value)}</b></div>`;
+              })
+              .join("")}</div>`
+          : `<div class="empty">暂无数据</div>`;
+      }
+
+      function roleDistributionRows(metrics) {
+        const grouped = {};
+        for (const row of metrics.staff || []) {
+          const key = row.isInternal ? (["reviewer", "pm", "bot"].includes(row.role) ? row.role : "operator") : "expert";
+          const item = grouped[key] || { key, label: roleName(key), senderCount: 0, messageCount: 0, replyCount: 0 };
+          item.senderCount += 1;
+          item.messageCount += Number(row.messageCount || 0);
+          item.replyCount += Number(row.replyCount || 0);
+          grouped[key] = item;
+        }
+        return Object.values(grouped).sort((a, b) => b.messageCount - a.messageCount);
+      }
+
+      function renderRoleDistribution(id, rows) {
+        const max = Math.max(...(rows || []).map((row) => Number(row.messageCount || 0)), 0);
+        $(id).innerHTML = rows?.length
+          ? `<div class="role-grid">${rows
+              .map((row) => {
+                const width = max ? Math.max(4, Math.round((Number(row.messageCount || 0) / max) * 100)) : 0;
+                const tip = `${row.label}：${row.senderCount || 0} 人，消息 ${row.messageCount || 0}，回复引用 ${row.replyCount || 0}。${RULE_TIPS.identity}`;
+                return `<div class="role-row"${tipAttrs(tip)}>
+                  <div class="row"><strong>${escapeHtml(row.label)}</strong><span class="badge">${fmt.format(row.senderCount)} 人</span></div>
+                  <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+                  <div class="row-meta"><span>消息 ${fmt.format(row.messageCount)}</span><span>回复引用 ${fmt.format(row.replyCount)}</span></div>
+                </div>`;
+              })
+              .join("")}</div>`
+          : `<div class="empty">暂无人员分布</div>`;
+      }
+
+      function renderOpsFocus(id, metrics) {
+        const candidates = metrics.analysisCandidates || [];
+        const noExplicitReply = candidates.filter((item) => item.replyConfidence !== "explicit_feishu_reply").length;
+        const internalReplies = (metrics.internalStaff || []).reduce((sum, row) => sum + Number(row.replyCount || 0), 0);
+        const hotExternal = (metrics.staff || [])
+          .filter((row) => !row.isInternal)
+          .sort((a, b) => Number(b.questionCount || b.messageCount || 0) - Number(a.questionCount || a.messageCount || 0))
+          .slice(0, 3);
+        const cards = [
+          ["待判断候选", metrics.questionCandidateCount || candidates.length || 0, "需要复核", `${RULE_TIPS.candidate} 数字来自 analysisCandidates/questionCandidates。`],
+          ["无引用回复", noExplicitReply, "优先检查是否漏跟", "候选里 replyConfidence 不是 explicit_feishu_reply 的数量；用于优先查是否漏跟，不能直接等于未回复。"],
+          ["内部回复", internalReplies, "运营真实引用回复", "当前范围内已标记内部人员的 replyCount 汇总，来自飞书引用回复边。"],
+          ["高活跃外部", hotExternal.length, hotExternal.map((row) => row.name || compactId(row.id)).join("、") || "暂无", "按外部发送人的疑问数/消息量排序取前三，用于发现需要重点服务的人。"]
+        ];
+        $(id).innerHTML = `<div class="ops-focus">
+          <div class="ops-grid">${cards
+            .map(([label, value, note, tip]) => `<div class="ops-card"${tipAttrs(tip)}><span>${escapeHtml(label)}</span><b>${fmt.format(value || 0)}</b><span>${escapeHtml(note)}</span></div>`)
+            .join("")}</div>
+        </div>`;
+      }
+
+      function renderDonut(id, rows) {
+        const data = (rows || []).filter((row) => Number(row.count || 0) > 0);
+        const total = data.reduce((sum, row) => sum + Number(row.count || 0), 0);
+        if (!data.length || !total) {
+          $(id).innerHTML = `<div class="empty">暂无数据</div>`;
+          return;
+        }
+        let cursor = 0;
+        const stops = data.map((row, index) => {
+          const start = cursor;
+          const end = cursor + (Number(row.count || 0) / total) * 100;
+          cursor = end;
+          return `${palette[index % palette.length]} ${start}% ${end}%`;
+        });
+        $(id).innerHTML = `<div class="donut-wrap"><div class="donut" data-total="${fmt.format(total)}" style="background:conic-gradient(${stops.join(",")})"></div><div class="legend">${data
+          .map((row, index) => `<div class="legend-row"><span class="swatch" style="background:${palette[index % palette.length]}"></span><span>${escapeHtml(row.label || row.key)}</span><b>${fmt.format(row.count)}</b></div>`)
+          .join("")}</div></div>`;
+      }
+
+      function renderColumnChart(id, rows, valueKey = "count", labelKey = "slot") {
+        const data = (rows || []).slice(-24);
+        if (!data.length) {
+          $(id).innerHTML = `<div class="empty">暂无数据</div>`;
+          return;
+        }
+        const max = Math.max(...data.map((row) => Number(row[valueKey] || 0)), 1);
+        $(id).innerHTML = `<div class="hour-bars">${data
+          .map((row, index) => {
+            const value = Number(row[valueKey] || 0);
+            const label = String(row[labelKey] || row.slot || row.date || index).slice(-5);
+            const width = Math.max(2, Math.round((value / max) * 100));
+            return `<div class="hour-row"><span>${escapeHtml(label)}</span><div class="hour-track"><div class="hour-fill" style="--w:${width}%"></div></div><span class="hour-value">${fmt.format(value)}</span></div>`;
+          })
+          .join("")}</div>`;
+      }
+
+      function identityLabel(key) {
+        return (
+          {
+            people_config: "人员表",
+            feishu_contact_api: "通讯录",
+            manual_input: "添加",
+            internal_group_unresolved: "内部群推断",
+            message_mention: "消息内姓名",
+            system_message_content: "系统事件",
+            sender_type_app: "应用机器人",
+            raw_open_id: "只有ID",
+            empty_sender: "无发送人"
+          }[key] || key
+        );
+      }
+
+      function renderOverview() {
+        const m = projectMetrics();
+        renderSlaTraffic();
+        renderPriorityStrip();
+        renderColumnChart("hourChart", m.coreMetricSummary?.hourlyMessageCount || []);
+        renderRoleDistribution("rolePanel", roleDistributionRows(m));
+      }
+
+      // ==================== Staffing tab ====================
+
+      function staffingSlots() {
+        const m = projectMetrics();
+        const draft = m.ruleDraft || {};
+        const real = m.hourlyStaffing && m.hourlyStaffing.length ? m.hourlyStaffing : null;
+        return { slots: real || draft.hourlyStaffing || [], isReal: !!real };
+      }
+
+      function renderStaffing() {
+        renderStaffingParams();
+        renderStandardWorkTable();
+        renderStaffingHeatmap();
+        renderStaffingDetail();
+      }
+
+      function renderStaffingParams() {
+        const sm = (state.dashboard && state.dashboard.staffingModel) || {};
+        const cards = [
+          { label: "时段粒度", value: `${sm.granularityMinutes || 60} 分钟`, note: "按小时聚合排班" },
+          { label: "单人有效工作", value: `${sm.effectiveWorkMinutesPerPerson || 45} 分钟/小时`, note: "扣除会议/喝水/上厕所" },
+          { label: "目标利用率", value: `${Math.round((sm.targetUtilization || 0.8) * 100)}%`, note: "留 20% 突发缓冲" }
+        ];
+        $("staffingParams").innerHTML = `<div class="staffing-params">${cards
+          .map((c) => `<div class="staffing-param-card"><div class="param-label">${escapeHtml(c.label)}</div><div class="param-value">${escapeHtml(c.value)}</div><div class="param-note">${escapeHtml(c.note)}</div></div>`)
+          .join("")}</div>${sm.formula ? `<div class="staffing-formula">${escapeHtml(sm.formula)}</div>` : ""}`;
+        const { isReal } = staffingSlots();
+        const badge = $("staffingSourceBadge");
+        if (isReal) {
+          badge.className = "badge real";
+          badge.textContent = "已确认";
+        } else {
+          badge.className = "badge draft";
+          badge.textContent = "规则召回";
+        }
+      }
+
+      function renderStandardWorkTable() {
+        const rows = (state.dashboard && state.dashboard.standardWorkMinuteTable) || [];
+        if (!rows.length) {
+          $("standardWorkTable").innerHTML = `<div class="empty">暂无工作量分钟表</div>`;
+          return;
+        }
+        $("standardWorkTable").innerHTML = `<table class="work-minute-table">
+          <thead><tr>
+            <th>优先级</th><th>SLA</th><th style="text-align:right">工作量分钟</th><th>定义 / 示例</th>
+          </tr></thead>
+          <tbody>${rows
+            .map((row) => {
+              const key = String(row.priority || "").toLowerCase();
+              const examples = (row.examples || []).slice(0, 4).join("、");
+              return `<tr>
+                <td><span class="priority-tag ${key}">${escapeHtml(row.priority || "")}</span></td>
+                <td>${escapeHtml(row.slaRange || (row.slaMinutes ? row.slaMinutes + " 分钟" : "—"))}</td>
+                <td style="text-align:right;font-weight:700">${fmt.format(row.standardWorkMinutes ?? row.workMinutes ?? 0)}</td>
+                <td>${escapeHtml(row.definition || row.label || "")}${examples ? `<div class="examples">例：${escapeHtml(examples)}</div>` : ""}</td>
+              </tr>`;
+            })
+            .join("")}</tbody></table>`;
+      }
+
+      function renderStaffingHeatmap() {
+        const { slots } = staffingSlots();
+        if (!slots.length) {
+          $("staffingHeatmap").innerHTML = `<div class="empty">暂无排班数据，先跑 <code>npm run dashboard</code></div>`;
+          $("staffingHeatmapNote").textContent = "";
+          return;
+        }
+        // 按日期分组：{ "YYYY-MM-DD": Map<hour, slot> }
+        const byDay = new Map();
+        let maxHead = 0;
+        for (const slot of slots) {
+          const s = String(slot.slot || "");
+          const day = s.slice(0, 10);
+          const hour = Number(s.slice(11, 13));
+          if (!day || Number.isNaN(hour)) continue;
+          if (!byDay.has(day)) byDay.set(day, new Map());
+          byDay.get(day).set(hour, slot);
+          maxHead = Math.max(maxHead, Number(slot.suggestedHeadcount || 0));
+        }
+        const days = [...byDay.keys()].sort();
+        // 默认选中：未选或选中已不存在 → 最忙的 slot
+        if (!state.selectedStaffingSlot || !slots.find((s) => s.slot === state.selectedStaffingSlot)) {
+          const hottest = slots.slice().sort((a, b) => Number(b.workloadMinutes || 0) - Number(a.workloadMinutes || 0))[0];
+          state.selectedStaffingSlot = hottest ? hottest.slot : "";
+        }
+        const rows = days.map((day) => {
+          const hourMap = byDay.get(day);
+          const cells = Array.from({ length: 24 }, (_, h) => {
+            const slot = hourMap.get(h);
+            if (!slot) return `<div class="heatmap-cell" title="${day} ${String(h).padStart(2, "0")}:00 无问题"></div>`;
+            const head = Number(slot.suggestedHeadcount || 0);
+            const high = Number(slot.highPriorityCount || 0);
+            const headBucket = Math.min(4, Math.max(1, head));
+            const isActive = slot.slot === state.selectedStaffingSlot;
+            const cls = ["heatmap-cell", "has-data", `head-${headBucket}`];
+            if (high > 0) cls.push("has-high");
+            if (isActive) cls.push("is-active");
+            const title = `${slot.slot} · 建议 ${head} 人 · 问题 ${slot.issueCount} · 高优 ${high} · 工作量 ${slot.workloadMinutes}m`;
+            return `<div class="${cls.join(" ")}" data-staffing-slot="${escapeHtml(slot.slot)}" title="${escapeHtml(title)}">${head}</div>`;
+          }).join("");
+          return `<div class="heatmap-row"><div class="day-label">${escapeHtml(day.slice(5))}</div><div class="heatmap-cells">${cells}</div></div>`;
+        });
+        $("staffingHeatmap").innerHTML = `<div class="staffing-heatmap">${rows.join("")}</div>
+          <div class="heatmap-legend">
+            <span><span class="swatch" style="background:#fbf8ef"></span>无问题</span>
+            <span><span class="swatch" style="background:#eef4f1"></span>1 人</span>
+            <span><span class="swatch" style="background:#d2e6dc"></span>2 人</span>
+            <span><span class="swatch" style="background:#a5cdbc"></span>3 人</span>
+            <span><span class="swatch" style="background:#5fa68b"></span>≥4 人</span>
+            <span><span class="swatch" style="box-shadow:inset 0 0 0 2px rgba(168,67,60,0.55)"></span>含 P0/P1</span>
+          </div>`;
+        const totalSlots = slots.length;
+        const totalIssues = slots.reduce((sum, s) => sum + Number(s.issueCount || 0), 0);
+        const totalWork = slots.reduce((sum, s) => sum + Number(s.workloadMinutes || 0), 0);
+        $("staffingHeatmapNote").textContent = `共 ${days.length} 天 / ${fmt.format(totalSlots)} 个有效时段 / 问题 ${fmt.format(totalIssues)} / 工作量 ${fmt.format(totalWork)} 分钟，单时段最高建议 ${maxHead} 人`;
+      }
+
+      function renderStaffingDetail() {
+        const slotKey = state.selectedStaffingSlot;
+        const detailEl = $("staffingDetail");
+        const badge = $("staffingDetailBadge");
+        if (!slotKey) {
+          detailEl.innerHTML = `<div class="empty">点击上方时段格子查看详情</div>`;
+          badge.className = "badge";
+          badge.textContent = "未选中";
+          return;
+        }
+        const { slots } = staffingSlots();
+        const slot = slots.find((s) => s.slot === slotKey);
+        if (!slot) {
+          detailEl.innerHTML = `<div class="empty">所选时段已不存在</div>`;
+          badge.textContent = "已失效";
+          return;
+        }
+        badge.className = "badge ai";
+        badge.textContent = slot.slot;
+        const priorities = ["P0", "P1", "P2", "P3"];
+        const prRows = priorities
+          .map((k) => {
+            const cnt = (slot.priorities || {})[k] || 0;
+            const min = (slot.priorityWorkloadMinutes || {})[k] || 0;
+            return `<div class="breakdown-row"><span><span class="priority-tag ${k.toLowerCase()}">${k}</span> ${fmt.format(cnt)} 题</span><b>${fmt.format(min)} 分钟</b></div>`;
+          })
+          .join("");
+        const cats = Object.entries(slot.categoryCounts || {})
+          .sort((a, b) => Number(b[1]) - Number(a[1]))
+          .slice(0, 8);
+        const catRows = cats.length
+          ? cats.map(([name, cnt]) => `<div class="breakdown-row"><span>${escapeHtml(name)}</span><b>${fmt.format(cnt)}</b></div>`).join("")
+          : `<div class="empty">无分类数据</div>`;
+        const roles = (slot.roles || [])
+          .map((r) => `<div class="role-row"><b>${escapeHtml(r.role || "")}</b> · ${fmt.format(r.count || 0)} 人<div class="role-focus">${escapeHtml(r.focus || "")}</div></div>`)
+          .join("");
+        detailEl.innerHTML = `<div class="staffing-detail">
+          <div class="detail-block">
+            <h3>问题构成（按优先级）</h3>
+            ${prRows}
+            <div class="formula-line">${escapeHtml(slot.workloadFormula || "")} = ${fmt.format(slot.workloadMinutes || 0)} 分钟</div>
+          </div>
+          <div class="detail-block">
+            <h3>问题分类（Top）</h3>
+            ${catRows}
+          </div>
+          <div class="detail-block">
+            <h3>建议人员配置</h3>
+            <div class="breakdown-row"><span>建议总人数</span><b>${fmt.format(slot.suggestedHeadcount || 0)} 人</b></div>
+            <div class="breakdown-row"><span>原始计算值</span><b>${Number(slot.suggestedHeadcountRaw || 0).toFixed(2)}</b></div>
+            ${roles || `<div class="empty">无角色拆分</div>`}
+          </div>
+          <div class="detail-block">
+            <h3>负载快照</h3>
+            <div class="breakdown-row"><span>问题总数</span><b>${fmt.format(slot.issueCount || 0)}</b></div>
+            <div class="breakdown-row"><span>高优数量</span><b>${fmt.format(slot.highPriorityCount || 0)}</b></div>
+            <div class="breakdown-row"><span>高优占比</span><b>${fmt.format(slot.highPriorityRatio || 0)}%</b></div>
+            <div class="breakdown-row"><span>总工作量</span><b>${fmt.format(slot.workloadMinutes || 0)} 分钟</b></div>
+          </div>
+        </div>`;
+      }
+
+      function matchesSearch(item, search) {
+        if (!search) return true;
+        return JSON.stringify(item).toLowerCase().includes(search.toLowerCase());
+      }
+
+      function staffAction(row) {
+        if (!row.id || row.id === "unknown") return `<span class="subtle">-</span>`;
+        if (row.isInternal) {
+          return `<button type="button" class="action-btn secondary" data-remove-internal="1" data-person-id="${escapeHtml(row.id)}" title="把这个人从内部人员标记里移除，后续按专家/外部人员统计。">恢复专家</button>`;
+        }
+        const name = row.nameSource === "raw_open_id" ? "" : row.name || "";
+        return `<button type="button" class="action-btn secondary" data-add-internal="1" data-person-id="${escapeHtml(row.id)}" data-person-name="${escapeHtml(name)}" title="把这个发送人保存到人员表，后续身份分布、内部回复和负载复核都会按内部人员计算。">${name ? "标记运营" : "输入姓名标记运营"}</button>`;
+      }
+
+      function statItems(row) {
+        return [
+          ["消息", fmt.format(row.messageCount || 0)],
+          ["回复引用", fmt.format(row.replyCount || 0)],
+          ["疑问消息", fmt.format(row.questionCount || 0)],
+          ["活跃天", fmt.format(row.activeDays || 0)]
+        ];
+      }
+
+      function renderStatGrid(row) {
+        return `<div class="stat-grid">${statItems(row)
+          .map(([label, value]) => `<div class="stat"><span>${escapeHtml(label)}</span><b>${escapeHtml(value)}</b></div>`)
+          .join("")}</div>`;
+      }
+
+      function personInsightRows(row) {
+        const groups = row.groupBreakdown || [];
+        const topGroup = groups[0];
+        const msgCount = Number(row.messageCount || 0);
+        const replyCount = Number(row.replyCount || 0);
+        const questionCount = Number(row.questionCount || 0);
+        const replyRatio = msgCount ? Math.round((replyCount / msgCount) * 100) : 0;
+        const questionRatio = msgCount ? Math.round((questionCount / msgCount) * 100) : 0;
+        const topGroupRatio = topGroup && msgCount ? Math.round((Number(topGroup.messageCount || 0) / msgCount) * 100) : 0;
+        const findings = [];
+        if (topGroup) findings.push(`主要活跃在「${topGroup.groupName || topGroup.chatId}」，占 ${topGroupRatio}% 消息。`);
+        findings.push(`回复引用占 ${replyRatio}%${replyRatio >= 50 ? "，更像答疑/运营动作。" : "，更像普通发言或提问。"} `);
+        findings.push(`疑问消息占 ${questionRatio}%${questionRatio >= 30 ? "，需要重点看问题质量和是否被回复。" : "，疑问压力不算高。"} `);
+        if (row.avgLatencySeconds != null) findings.push(`平均引用延迟 ${secondsText(row.avgLatencySeconds)}。`);
+        return findings;
+      }
+
+      function renderPersonGroupBars(row) {
+        const groups = (row.groupBreakdown || []).slice(0, 8);
+        const max = Math.max(...groups.map((group) => Number(group.messageCount || 0)), 1);
+        if (!groups.length) return `<div class="empty">暂无按群数据</div>`;
+        return `<div class="bars">${groups
+          .map((group) => {
+            const count = Number(group.messageCount || 0);
+            const reply = Number(group.replyCount || 0);
+            const question = Number(group.questionCount || 0);
+            const width = Math.max(4, Math.round((count / max) * 100));
+            return `<div class="bar-row person-source-row">
+              <span class="label">${escapeHtml(group.groupName || group.chatId || "-")}</span>
+              <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+              <b>${fmt.format(count)}</b>
+              <button type="button" class="action-btn secondary" data-staff-source="1" data-source-sender="${escapeHtml(row.id || "")}" data-source-chat="${escapeHtml(group.chatId || "")}" data-source-label="${escapeHtml((row.name || row.id || "发送人") + " · " + (group.groupName || group.chatId || "群"))}">看消息</button>
+              <div class="row-meta person-bar-meta"><span>回复 ${fmt.format(reply)}</span><span>疑问 ${fmt.format(question)}</span><span>${escapeHtml(timeText(group.firstTime))} 至 ${escapeHtml(timeText(group.lastTime))}</span></div>
+            </div>`;
+          })
+          .join("")}</div>`;
+      }
+
+      function renderPersonCard(row) {
+        const active = row.id === state.selectedStaffId;
+        const groups = (row.groupBreakdown || []).slice(0, 3);
+        const source = identityLabel(row.nameSource);
+        const tip = `${row.name || row.id || "未知发送人"}：身份 ${personIdentityText(row)}，来源 ${source}。消息 ${row.messageCount || 0}，回复 ${row.replyCount || 0}。`;
+        return `<article class="person-card ${active ? "active" : ""}"${tipAttrs(tip)}>
+          <div class="person-title">
+            <div>
+              <strong>${escapeHtml(row.name || "未知发送人")}</strong>
+              <div class="subtle">${escapeHtml(compactId(row.id))}</div>
+            </div>
+            <div class="chips">${identityBadges(row)}</div>
+          </div>
+          <div class="row-meta">
+            <span>消息 ${fmt.format(row.messageCount || 0)}</span>
+            <span>回复 ${fmt.format(row.replyCount || 0)}</span>
+            <span>活跃 ${fmt.format(row.activeDays || 0)} 天</span>
+          </div>
+          ${groups.length ? `<div class="row-meta">${groups.map((group) => `<span>${escapeHtml(group.groupName)} ${fmt.format(group.messageCount || 0)} 条</span>`).join("")}</div>` : ""}
+          <div class="person-actions">
+            <button type="button" class="action-btn" data-select-staff="${escapeHtml(row.id)}">查看详情</button>
+            ${staffAction(row)}
+          </div>
+        </article>`;
+      }
+
+      function renderPersonCards(rows, emptyText) {
+        return rows?.length ? `<div class="person-list">${rows.map((row) => renderPersonCard(row)).join("")}</div>` : `<div class="empty">${escapeHtml(emptyText)}</div>`;
+      }
+
+      function renderStaffDetail(row, totalCount, matchedCount, scopedRow = null) {
+        if (!row) {
+          return `<div class="truth-note"><b>搜索全量发送人</b><span>当前项目共有 ${fmt.format(totalCount)} 个发送人。输入姓名或 open_id，或点击列表里的“查看详情”。</span></div>`;
+        }
+        const typeRows = (row.messageTypeRows || []).slice(0, 8).map((item) => ({ ...item, label: messageTypeLabel(item.key) }));
+        const recentRows = row.recentMessages || [];
+        const findings = personInsightRows(row);
+        const scopeNote =
+          scopedRow && scopedRow !== row
+            ? `详情展示全局画像；左侧列表仍按当前筛选范围排序。当前筛选内：消息 ${fmt.format(scopedRow.messageCount || 0)}，回复 ${fmt.format(scopedRow.replyCount || 0)}。`
+            : `详情展示当前范围画像。匹配 ${fmt.format(matchedCount)} 人，列表范围发送人 ${fmt.format(totalCount)}。`;
+        return `<div class="person-detail">
+          <div class="person-detail-card">
+            <div class="person-title">
+              <div>
+                <strong>${escapeHtml(row.name || "未知发送人")}</strong>
+                <div class="subtle">${escapeHtml(row.id || "")}</div>
+              </div>
+              <div class="chips">${identityBadges(row, { showDefault: true })}</div>
+            </div>
+            <div class="mini-note">${escapeHtml(scopeNote)}</div>
+            ${renderStatGrid(row)}
+            <div class="person-actions">
+              <button type="button" class="action-btn" data-staff-source="1" data-source-sender="${escapeHtml(row.id || "")}" data-source-label="${escapeHtml((row.name || row.id || "发送人") + " · 全部消息")}">查看这个人的消息</button>
+              ${staffAction(row)}
+            </div>
+          </div>
+          <div class="split">
+            <div class="person-detail-card">
+              <div class="panel-head"><h3>活跃发现</h3></div>
+              <div class="person-findings">${findings.map((item) => `<div class="truth-note"><span>${escapeHtml(item)}</span></div>`).join("")}</div>
+            </div>
+            <div class="person-detail-card">
+              <div class="panel-head"><h3>按群活跃</h3></div>
+              ${renderPersonGroupBars(row)}
+            </div>
+          </div>
+          <div class="split">
+            <div class="person-detail-card">
+              <div class="panel-head"><h3>消息类型</h3></div>
+              <div id="personTypeBars">${typeRows.length ? "" : `<div class="empty">暂无类型数据</div>`}</div>
+              ${typeRows.length ? `<div class="bars">${typeRows.map((item) => `<div class="bar-row"><span class="label">${escapeHtml(item.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4, Math.round((item.count / Math.max(...typeRows.map((row) => row.count), 1)) * 100))}%"></div></div><b>${fmt.format(item.count)}</b></div>`).join("")}</div>` : ""}
+            </div>
+            <div class="person-detail-card">
+              <div class="panel-head"><h3>回复行为</h3></div>
+              <div class="bars">
+                <div class="bar-row"><span class="label">回复引用</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4, Math.min(100, row.replyRatio || 0))}%"></div></div><b>${fmt.format(row.replyRatio || 0)}%</b></div>
+                <div class="bar-row"><span class="label">疑问占比</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4, Math.min(100, Math.round(((row.questionCount || 0) / Math.max(row.messageCount || 1, 1)) * 100)))}%"></div></div><b>${fmt.format(Math.round(((row.questionCount || 0) / Math.max(row.messageCount || 1, 1)) * 100))}%</b></div>
+              </div>
+              <div class="mini-note">平均引用延迟 ${escapeHtml(secondsText(row.avgLatencySeconds))}；首条 ${escapeHtml(timeText(row.firstTime))}，最近 ${escapeHtml(timeText(row.lastTime))}。</div>
+            </div>
+          </div>
+          <div class="person-detail-card">
+            <div class="panel-head"><h3>最近消息</h3></div>
+            ${
+              recentRows.length
+                ? `<div class="recent-messages">${recentRows
+                    .map((message) => `<div class="mini-message mini-message-clickable" data-staff-source="1" data-source-message="${escapeHtml(message.messageId || "")}" data-source-chat="${escapeHtml(message.chatId || "")}" data-source-label="${escapeHtml((message.groupName || row.name || row.id || "消息") + " · 单条上下文")}">
+                      <div class="row-meta"><span>${escapeHtml(timeText(message.createTime))}</span><span>${escapeHtml(message.groupName || "")}</span><span>${escapeHtml(messageTypeLabel(message.msgType))}</span>${message.isReply ? `<span>回复</span>` : ""}</div>
+                      <div>${escapeHtml(message.text || "[无文本内容]")}</div>
+                      <div class="mini-message-hint">点击查看原群上下文</div>
+                    </div>`)
+                    .join("")}</div>`
+                : `<div class="empty">暂无最近消息</div>`
+            }
+          </div>
+        </div>`;
+      }
+
+      function renderStaff() {
+        const m = projectMetrics();
+        const allStaff = m.staff || [];
+        const staffMatches = state.staffSearch ? allStaff.filter((row) => matchesSearch(row, state.staffSearch)) : allStaff;
+        if (state.staffSearch && staffMatches[0]) state.selectedStaffId = staffMatches[0].id;
+        if (!allStaff.some((row) => row.id === state.selectedStaffId)) state.selectedStaffId = staffMatches[0]?.id || allStaff[0]?.id || "";
+        const scopedSelected = allStaff.find((row) => row.id === state.selectedStaffId);
+        const globalSelected = (state.dashboard?.periods?.all?.metrics?.staff || []).find((row) => row.id === state.selectedStaffId);
+        const selected = globalSelected || scopedSelected;
+        const visibleStaff = state.staffSearch ? staffMatches : allStaff.slice(0, 60);
+        const selectRows = staffMatches.length ? staffMatches : allStaff;
+        $("staffSelect").innerHTML = selectRows.length
+          ? selectRows
+              .slice(0, 300)
+              .map((row) => {
+                const label = `${row.name || row.id || "未知发送人"} · ${personIdentityText(row)} · 消息 ${fmt.format(row.messageCount || 0)}`;
+                return `<option value="${escapeHtml(row.id || "")}" ${row.id === state.selectedStaffId ? "selected" : ""}>${escapeHtml(label)}</option>`;
+              })
+              .join("")
+          : `<option value="">暂无发送人</option>`;
+        $("staffSelect").onchange = (event) => {
+          state.selectedStaffId = event.target.value || "";
+          renderStaff();
+        };
+        $("staffDetail").innerHTML = renderStaffDetail(selected, allStaff.length, staffMatches.length, scopedSelected);
+        $("staffListBadge").textContent = `${fmt.format(visibleStaff.length)} / ${fmt.format(allStaff.length)}`;
+        $("allStaffTable").innerHTML = renderPersonCards(visibleStaff, "没有匹配发送人");
+      }
+
+      async function postJson(url, payload = {}) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.ok) throw new Error(result.error || "请求失败");
+        return result;
+      }
+
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      async function reloadDashboard(statusText) {
+        state.dashboard = await loadJson("/data/dashboard/dashboard.json", state.dashboard);
+        state.ai = await loadJson("/data/dashboard/ai-insights.json", state.ai);
+        $("generatedAt").textContent = `生成时间 ${timeText(state.dashboard.generatedAt)}`;
+        $("archiveDir").textContent = `数据目录 ${state.dashboard.archiveDir}`;
+        if (statusText) $("status").textContent = statusText;
+        renderAll();
+        await Promise.all([mergeProjectsFromApi(), refreshStorageStatusFromApi(), reloadManualOps(), reloadAiStatus()]);
+        renderAll();
+      }
+
+      async function resolvePeopleFromApi() {
+        const button = $("resolvePeopleButton");
+        button.disabled = true;
+        button.textContent = "回写中...";
+        $("status").textContent = "查通讯录";
+        try {
+          const result = await postJson("/api/people/resolve", { force: true });
+          if (result.summary?.permissionError) {
+            alert("飞书通讯录权限未开通，接口暂时不能回写。请开通通讯录读取权限后再点回写；现在可以用手动录入入口显式添加。");
+            await reloadDashboard("通讯录权限不足");
+            return;
+          }
+          await reloadDashboard(`已回写 ${fmt.format(result.summary?.resolved || 0)} 人`);
+        } catch (error) {
+          $("status").textContent = "回写失败";
+          alert(error.message);
+        } finally {
+          button.disabled = false;
+          button.textContent = "飞书接口回写";
+        }
+      }
+
+      async function addInternalPerson(payload, button) {
+        const trigger = button || $("addManualPersonButton");
+        const oldText = trigger.textContent;
+        trigger.disabled = true;
+        trigger.classList.add("is-busy");
+        trigger.textContent = "写入中...";
+        $("status").textContent = "写入身份";
+        try {
+          const result = await postJson("/api/people/internal", payload);
+          state.selectedStaffId = result.person?.id || payload.id || state.selectedStaffId;
+          trigger.textContent = "已保存";
+          await reloadDashboard(`已保存身份 ${result.person?.person?.name || payload.name}`);
+          if (!button) {
+            $("manualPersonId").value = "";
+            $("manualPersonName").value = "";
+            $("manualPersonTeam").value = "";
+          }
+        } catch (error) {
+          $("status").textContent = "添加失败";
+          alert(error.message);
+        } finally {
+          trigger.disabled = false;
+          trigger.classList.remove("is-busy");
+          if (document.body.contains(trigger)) trigger.textContent = oldText;
+        }
+      }
+
+      async function addInternalPersonFromForm() {
+        const payload = {
+          id: $("manualPersonId").value.trim(),
+          name: $("manualPersonName").value.trim(),
+          team: $("manualPersonTeam").value.trim(),
+          role: $("manualPersonRole").value
+        };
+        if (!payload.id || !payload.name) {
+          alert("请填写 open_id/user_id 和姓名");
+          return;
+        }
+        await addInternalPerson(payload);
+      }
+
+      async function removeInternalPerson(id, button) {
+        if (!id) return;
+        button.disabled = true;
+        $("status").textContent = "恢复专家";
+        try {
+          const result = await postJson("/api/people/internal/remove", { id });
+          state.selectedStaffId = result.person?.id || id;
+          await reloadDashboard(`已恢复专家 ${result.person?.person?.name || id}`);
+        } catch (error) {
+          $("status").textContent = "取消失败";
+          alert(error.message);
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      function setRefreshButtons(disabled, mainLabel = "刷新群和消息", sideLabel = "刷新") {
+        const buttons = [$("refreshButton"), $("refreshGroupsButton")].filter(Boolean);
+        buttons.forEach((button) => {
+          button.disabled = disabled;
+          button.textContent = button.id === "refreshGroupsButton" ? sideLabel : mainLabel;
+        });
+      }
+
+      function refreshLabels(stage, elapsedMs = 0) {
+        const elapsed = elapsedMs ? ` ${Math.max(1, Math.round(elapsedMs / 1000))}s` : "";
+        if (stage === "发现新群") return { main: `发现群${elapsed}`, side: "发现中" };
+        if (stage === "同步消息") return { main: `同步消息${elapsed}`, side: "同步中" };
+        if (stage === "刷新统计") return { main: `刷新统计${elapsed}`, side: "统计中" };
+        if (stage === "重建看板") return { main: `重建看板${elapsed}`, side: "重建中" };
+        if (stage === "完成") return { main: "刷新群和消息", side: "刷新" };
+        if (stage === "失败") return { main: "刷新失败", side: "失败" };
+        return { main: `刷新中${elapsed}`, side: "刷新中" };
+      }
+
+      async function pollRefreshUntilDone(initialRefresh = {}) {
+        let current = initialRefresh;
+        for (let attempt = 0; attempt < 240; attempt += 1) {
+          const labels = refreshLabels(current.stage, current.elapsedMs);
+          setRefreshButtons(Boolean(current.running), labels.main, labels.side);
+          $("status").textContent = current.running ? current.stage || "同步中" : current.stage === "失败" ? "刷新失败" : "刷新完成";
+          if (!current.running) return current;
+          await sleep(1500);
+          const status = await loadJson("/api/refresh/status", { ok: false, refresh: current });
+          current = status.refresh || current;
+        }
+        $("status").textContent = "后台仍在刷新";
+        return { ...current, running: true, timedOut: true };
+      }
+
+      async function refreshIncremental() {
+        setRefreshButtons(true, "启动刷新...", "启动中");
+        $("status").textContent = "启动刷新";
+        try {
+          const response = await fetch("/api/refresh", { method: "POST" });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || !result.ok) {
+            alert(result.error || "增量刷新失败");
+            return;
+          }
+          const refresh = await pollRefreshUntilDone(result.refresh || {});
+          if (refresh.timedOut) return;
+          if (refresh.error) {
+            alert(refresh.error);
+            return;
+          }
+          state.dashboard = await loadJson("/data/dashboard/dashboard.json", state.dashboard);
+          state.ai = await loadJson("/data/dashboard/ai-insights.json", state.ai);
+          await mergeProjectsFromApi();
+          await refreshStorageStatusFromApi();
+          const output = refresh.result || {};
+          const addedProjects = Number(output.discovery?.added || 0);
+          const updatedProjects = Number(output.discovery?.updated || 0);
+          const newMessages = Number(output.syncStats?.newMessages || 0);
+          $("status").textContent = `已刷新 +${fmt.format(newMessages)}，新群 ${fmt.format(addedProjects)}，更新 ${fmt.format(updatedProjects)}`;
+          $("generatedAt").textContent = `生成时间 ${timeText(state.dashboard.generatedAt)}`;
+          $("archiveDir").textContent = `数据目录 ${state.dashboard.archiveDir}`;
+          renderAll();
+        } finally {
+          setRefreshButtons(false);
+          if ($("status").textContent === "同步中") $("status").textContent = "已连接";
+        }
+      }
+
+      async function runAiAnalysis() {
+        const button = $("runAiButton");
+        if (button.disabled) return;
+        button.disabled = true;
+        button.textContent = "复核中…";
+        state.aiStatus = { ...state.aiStatus, running: true, lastStartedAt: new Date().toISOString() };
+        renderAiTriggerBar();
+        // 轮询 status，让 badge 显示已运行秒数
+        const startMs = Date.now();
+        const tick = setInterval(() => {
+          const sec = Math.round((Date.now() - startMs) / 1000);
+          const el = $("aiLastRun");
+          if (el) {
+            el.textContent = `运行中… ${sec}s`;
+            el.className = "badge warn";
+          }
+        }, 1000);
+        try {
+          const response = await fetch("/api/ai/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ maxCandidates: 80 })
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || !result.ok) {
+            alert(result.error || "复核失败");
+            return;
+          }
+          await reloadDashboard("复核完成");
+        } catch (error) {
+          alert("复核失败：" + error.message);
+        } finally {
+          clearInterval(tick);
+          await reloadAiStatus();
+          renderAi();
+        }
+      }
+
+      function renderAiSummary(ai) {
+        const questionRows = ai.commonQuestions || [];
+        return questionRows.length
+          ? questionRows
+              .map((item) => `<article class="message"><div class="row"><div class="chips"><span class="badge ai">${escapeHtml(item.categoryName || item.correctedCategory || "模型分类")}</span><span class="badge ai">${escapeHtml(item.priority || item.correctedPriority || "待定")}</span></div><span class="badge ai">模型</span></div><div class="text">${escapeHtml(item.question || item.text || "")}</div>${item.suggestedAnswer ? `<div class="text"><b>建议话术</b><br>${escapeHtml(item.suggestedAnswer)}</div>` : ""}<div class="row-meta"><span>证据 ${escapeHtml((item.evidenceIssueIds || item.sourceMessageIds || []).join(", "))}</span></div></article>`)
+              .join("")
+          : `<div class="empty">模型没有返回常见问题。</div>`;
+      }
+
+      function renderCandidateDetail(candidate, ai) {
+        const related = relatedAiItems(candidate.issueId, ai);
+        return `<div class="issue-thread">
+          <article class="message">
+            <div class="row">
+              <div class="chips"><span class="badge warn">${escapeHtml(candidate.issueId)}</span><span class="badge">${escapeHtml(timeText(candidate.questionTime))}</span><span class="badge">${escapeHtml(candidate.replyConfidence === "explicit_feishu_reply" ? "有引用回复" : "无引用回复")}</span></div>
+              <span class="badge warn">候选</span>
+            </div>
+            <div class="row-meta"><span>${escapeHtml(candidate.projectName)}</span><span>${escapeHtml(candidate.groupName)}</span><span>提问人 ${escapeHtml(candidate.askerName || "")}</span></div>
+            <div class="text">${escapeHtml(candidate.text || "")}</div>
+          </article>
+          <div class="message">
+            <div class="panel-head"><h3>飞书上下文复现</h3><span class="badge real">${fmt.format((candidate.messages || []).length)} 条</span></div>
+            <div class="chat-feed">${(candidate.messages || []).map((message) => renderChatMessage(message)).join("") || `<div class="empty">暂无上下文</div>`}</div>
+          </div>
+          <div class="message ai-zone">
+            <div class="panel-head"><h3>关联复核</h3><span class="badge ai">${related.length ? `${fmt.format(related.length)} 条` : "未点名"}</span></div>
+            ${related.length ? related.map((item) => `<div class="ai-finding"><div class="row"><span class="badge ai">${escapeHtml(item.type)}</span></div><div class="text"><b>${escapeHtml(item.title)}</b>${item.body ? `<br>${escapeHtml(item.body)}` : ""}</div><div class="row-meta"><span>证据 ${escapeHtml(item.ids.join(", "))}</span></div></div>`).join("") : `<div class="empty">当前模型没有把这条候选写进常见问题或话术；可以点击“运行复核”扩大样本后重新分析。</div>`}
+          </div>
+        </div>`;
+      }
+
+      // 高优规则 (b)：未解决 + 提问 >= 24h + (回复 >=3 OR @全员 OR 急词)
+      function isHighPriority(c, manualOps) {
+        if (manualOps[c.issueId]?.status === "resolved") return false;
+        const ageHours = (Date.now() - new Date(c.questionTime).getTime()) / 3_600_000;
+        if (ageHours < 24) return false;
+        const text = String(c.text || "");
+        const replyCount = (c.messages || []).length;
+        return replyCount >= 3 || /@全员|@all/i.test(text) || /(急|紧急|asap|urgent)/i.test(text);
+      }
+
+      function avgReplyHumanText(seconds) {
+        if (seconds == null) return "—";
+        if (seconds < 60) return `${Math.round(seconds)} 秒`;
+        if (seconds < 3600) return `${(seconds / 60).toFixed(1)} 分`;
+        return `${(seconds / 3600).toFixed(1)} 小时`;
+      }
+
+      // 把 AI 模型 commonQuestions 的 evidenceIssueIds 反向索引成 Map<issueId, {categoryName, priority}>
+      // AI 没跑或没 evidence 时返回空 Map，调用方负责回退到 ruleDraft
+      function buildAiClassMap(ai) {
+        const map = new Map();
+        if (!ai || ai.source !== "model") return map;
+        // Phase 4 起：issueUpdates 是 AI 给每条 issue 的精确分类，优先用它
+        for (const u of ai.issueUpdates || []) {
+          if (!u?.issueId) continue;
+          map.set(u.issueId, {
+            categoryName: u.correctedCategory || u.categoryName || "模型分类",
+            priority: u.correctedPriority || u.priority || "",
+            source: "ai"
+          });
+        }
+        // 兜底：老结构里只有 commonQuestions.evidenceIssueIds
+        for (const q of ai.commonQuestions || []) {
+          const ids = q.evidenceIssueIds || q.sourceIssueIds || [];
+          const meta = {
+            categoryName: q.categoryName || q.correctedCategory || "模型分类",
+            priority: q.priority || q.correctedPriority || "",
+            source: "ai"
+          };
+          for (const id of ids) if (!map.has(id)) map.set(id, meta);
+        }
+        return map;
+      }
+
+      // 给一条 candidate 取分类：AI 优先，规则草稿兜底
+      function classifyCandidate(c, aiClassMap) {
+        const ai = aiClassMap.get(c.issueId);
+        if (ai) return { categoryName: ai.categoryName, priority: ai.priority, source: "ai" };
+        return {
+          categoryName: c.ruleDraft?.categoryName || "未分类",
+          priority: c.ruleDraft?.priorityLabel || c.ruleDraft?.priority || "",
+          source: "draft"
+        };
+      }
+
+      function computeAiOverview(m, candidates, manualOps, aiClassMap) {
+        const total = candidates.length;
+        const resolved = candidates.filter((c) => manualOps[c.issueId]?.status === "resolved").length;
+        const assigned = candidates.filter((c) => manualOps[c.issueId]?.assignedTo === "ops").length;
+        const explicit = candidates.filter((c) => c.replyConfidence === "explicit_feishu_reply").length;
+        const unresolvedRate = total ? Math.round(((total - resolved) / total) * 100) : 0;
+        const aiClassified = aiClassMap ? candidates.filter((c) => aiClassMap.has(c.issueId)).length : 0;
+
+        // 类型分布：AI 优先，规则草稿兜底；标注 source 让 UI 区分
+        const typeMap = new Map();
+        for (const c of candidates) {
+          const cls = classifyCandidate(c, aiClassMap || new Map());
+          const cat = cls.categoryName;
+          if (!typeMap.has(cat)) typeMap.set(cat, { count: 0, source: cls.source });
+          const entry = typeMap.get(cat);
+          entry.count += 1;
+          // 只要有一条来自 AI，就记为 ai
+          if (cls.source === "ai") entry.source = "ai";
+        }
+        const typeDist = [...typeMap.entries()]
+          .map(([label, { count, source }]) => ({ label, count, source }))
+          .sort((a, b) => b.count - a.count);
+
+        // 每日趋势（近 14 天）
+        const dayMap = new Map();
+        const now = new Date();
+        for (let i = 13; i >= 0; i--) {
+          const d = new Date(now);
+          d.setDate(d.getDate() - i);
+          const key = d.toISOString().slice(0, 10);
+          dayMap.set(key, 0);
+        }
+        for (const c of candidates) {
+          const day = String(c.questionTime || "").slice(0, 10);
+          if (dayMap.has(day)) dayMap.set(day, dayMap.get(day) + 1);
+        }
+        const dailyTrend = [...dayMap.entries()].map(([label, count]) => ({ label, count }));
+
+        // Top 提问者
+        const askerMap = new Map();
+        for (const c of candidates) {
+          const name = c.askerName || `未知 ${(c.askerId || "").slice(0, 6)}`;
+          if (!askerMap.has(name)) askerMap.set(name, { name, count: 0, replied: 0 });
+          const a = askerMap.get(name);
+          a.count += 1;
+          if (c.replyConfidence === "explicit_feishu_reply") a.replied += 1;
+        }
+        const topAskers = [...askerMap.values()].sort((a, b) => b.count - a.count).slice(0, 10);
+
+        // 高优
+        const highPri = candidates.filter((c) => isHighPriority(c, manualOps));
+
+        return {
+          total,
+          resolved,
+          assigned,
+          explicit,
+          unresolvedRate,
+          avgReplySeconds: m.avgReplySeconds,
+          aiClassified, // 0 表示 AI 没分到这批 candidates，UI 提示用户跑分析
+          typeDist,
+          dailyTrend,
+          topAskers,
+          highPri
+        };
+      }
+
+      function renderAiTriggerBar() {
+        const ai = state.ai || {};
+        const meta = state.aiStatus || {};
+        let badge = "未运行";
+        let cls = "ai";
+        if (meta.running) {
+          badge = "运行中…";
+          cls = "warn";
+        } else if (meta.lastFinishedAt) {
+          const dur = meta.lastDurationMs ? `（${(meta.lastDurationMs / 1000).toFixed(1)}s）` : "";
+          badge = `上次：${timeText(meta.lastFinishedAt)} ${dur}`;
+          cls = meta.lastError ? "warn" : "ai";
+        } else if (ai.generatedAt && ai.source === "model") {
+          badge = `结果时间 ${timeText(ai.generatedAt)}`;
+        }
+        const el = $("aiLastRun");
+        if (el) {
+          el.textContent = badge;
+          el.className = `badge ${cls}`;
+        }
+        const btn = $("runAiButton");
+        if (btn) {
+          btn.disabled = !!meta.running;
+          btn.textContent = meta.running ? "复核中…" : "运行复核";
+        }
+      }
+
+      function renderCandidateActions(c, manualOps) {
+        const op = manualOps[c.issueId] || {};
+        const isResolved = op.status === "resolved";
+        const isAssigned = op.assignedTo === "ops";
+        const badges = [];
+        if (isResolved) badges.push(`<span class="badge real">已解决</span>`);
+        if (isAssigned && !isResolved) badges.push(`<span class="badge ai">已转排班</span>`);
+        return { badges: badges.join(""), isResolved, isAssigned };
+      }
+
+      function renderAi() {
+        const m = projectMetrics();
+        const ai = state.ai || {};
+        const manualOps = state.manualOps || {};
+        const candidates = (m.analysisCandidates || []).slice().reverse();
+        const aiClassMap = buildAiClassMap(ai);
+        state.aiClassMap = aiClassMap; // 让 renderCandidateRow 等其他函数能取到
+        const overview = computeAiOverview(m, candidates, manualOps, aiClassMap);
+        const aiReady = ai.source === "model";
+        const lastError = state.aiStatus?.lastError || "";
+
+        renderAiTriggerBar();
+        $("aiRunHint").innerHTML = lastError
+          ? `<b>上次复核失败</b><span>${escapeHtml(lastError)}。页面保留规则候选，不会把失败结果当结论。</span>`
+          : `<b>复核说明</b><span>点击「运行复核」会调用模型确认候选是否真问题、分类、优先级和解决状态；失败时会显示错误，不覆盖当前数据。</span>`;
+
+        // 段 2: 总览 4 卡（AI 真分类指标优先，规则候选兜底）
+        const core = ai.coreMetrics || {};
+        const totalLabel = aiReady && core.classifiedQuestionCount != null
+          ? `${core.classifiedQuestionCount}`
+          : String(overview.total);
+        const totalNote = aiReady
+          ? `已分 ${overview.aiClassified}/${overview.total}`
+          : "本期候选（规则召回）";
+        const unresolvedNote = aiReady ? "复核后" : `已标解决 ${overview.resolved}`;
+        const overviewItems = [
+          ["问题总数", totalLabel, totalNote, aiReady ? "ai" : "draft"],
+          ["未解决率", `${overview.unresolvedRate}%`, unresolvedNote, aiReady ? "ai" : "draft"],
+          ["有引用回复", overview.explicit, `占比 ${overview.total ? Math.round((overview.explicit / overview.total) * 100) : 0}%`, "real"],
+          ["平均回复", avgReplyHumanText(overview.avgReplySeconds), "真实链路", "real"]
+        ];
+        $("aiOverview").innerHTML = overviewItems
+          .map(([label, value, note, badge]) => `<div class="metric"><span>${escapeHtml(label)} ${badgeShort(badge)}</span><b>${escapeHtml(String(value))}</b><span>${escapeHtml(note)}</span></div>`)
+          .join("");
+
+        // 段 3a: 类型分布（AI 跑过显示 AI 真分类占比，否则提示是规则草稿）
+        const aiTypeTotal = $("aiTypeTotal");
+        if (aiReady) {
+          aiTypeTotal.textContent = `已分 ${overview.aiClassified}/${overview.total}`;
+          aiTypeTotal.className = "badge ai";
+        } else {
+          aiTypeTotal.textContent = `规则 ${overview.total}`;
+          aiTypeTotal.className = "badge draft";
+        }
+        renderBars("aiTypeDist", overview.typeDist, "label", "count");
+
+        // 段 3b: 每日趋势
+        renderBars("aiDailyTrend", overview.dailyTrend, "label", "count");
+
+        // 段 4: 高优问题：AI 跑过且有 unresolvedQuestions 时用 AI 口径，否则规则草稿
+        const aiUnresolved = aiReady ? (ai.unresolvedQuestions || []) : [];
+        const candidateById = new Map(candidates.map((c) => [c.issueId, c]));
+        const aiHighPriRows = aiUnresolved
+          .map((q) => {
+            const ids = q.evidenceIssueIds || q.sourceIssueIds || [];
+            // 一条 AI 未解决可能映射到多个 candidate；只取第一个有 candidate 数据的
+            for (const id of ids) {
+              const c = candidateById.get(id);
+              if (c) return c;
+            }
+            return null;
+          })
+          .filter(Boolean);
+        const highPriRows = aiHighPriRows.length ? aiHighPriRows : overview.highPri;
+        const highPriBadge = aiHighPriRows.length ? "ai" : "draft";
+        const aiHighPriCount = $("aiHighPriCount");
+        aiHighPriCount.textContent = String(highPriRows.length);
+        aiHighPriCount.className = `badge ${highPriBadge}`;
+        $("aiHighPriList").innerHTML = highPriRows.length
+          ? highPriRows.map((c) => renderCandidateRow(c, manualOps, true)).join("")
+          : aiReady
+            ? `<div class="empty">没有标记未解决高优问题。</div>`
+            : `<div class="empty">没有触发高优规则的问题。</div>`;
+
+        // 段 5: AI 模型产出
+        if (ai.source !== "model") {
+          $("aiResults").innerHTML = lastError
+            ? `<div class="empty">复核失败：${escapeHtml(lastError)}</div>`
+            : `<div class="empty">${escapeHtml(ai.note || "运行复核后这里会出现模型产出")}</div>`;
+        } else {
+          $("aiResults").innerHTML = renderAiSummary(ai);
+        }
+
+        // 段 6: 全部问题
+        const displayCandidates = candidates.slice(0, 200);
+        $("candidateList").innerHTML = candidates.length
+          ? displayCandidates.map((c) => renderCandidateRow(c, manualOps, false)).join("")
+          : `<div class="empty">暂无候选。注意：候选不是专家问题结论，只是给人工或模型复核的召回池。</div>`;
+
+        // 卡片按钮事件委托（避免每次重渲染绑事件）
+        bindCandidateActions();
+
+        // 排班 + 风险
+        if (ai.source !== "model") {
+          $("aiStaffing").innerHTML = `<div class="empty">未运行复核前不生成排班建议，避免规则分级误导运营。</div>`;
+          $("aiRisks").innerHTML = `<div class="empty">未运行复核前不生成风险与行动建议。</div>`;
+        } else {
+          $("aiStaffing").innerHTML = table(ai.staffingPlan || [], [
+            ["时段", (row) => escapeHtml(row.slot || "")],
+            ["建议人数", (row) => fmt.format(row.suggestedHeadcount || 0)],
+            ["角色", (row) => (row.roles || []).map((role) => `${escapeHtml(role.role)} ${fmt.format(role.count || 0)}人`).join("，") || "-"],
+            ["证据", (row) => escapeHtml((row.evidenceIssueIds || row.sourceMessageIds || []).join(", "))]
+          ]);
+          const riskRows = [
+            ...(ai.risks || []).map((risk) => ({ type: "风险", text: risk.risk || risk.text || "", detail: risk.evidence || risk.reason || "" })),
+            ...(ai.nextActions || []).map((text) => ({ type: "下一步", text, detail: "" }))
+          ];
+          $("aiRisks").innerHTML = riskRows.length
+            ? riskRows.map((row) => `<article class="message"><div class="row"><span class="badge ai">${escapeHtml(row.type)}</span></div><div class="text">${escapeHtml(row.text)}</div>${row.detail ? `<div class="row-meta"><span>${escapeHtml(row.detail)}</span></div>` : ""}</article>`).join("")
+            : `<div class="empty">模型没有返回风险或下一步。</div>`;
+        }
+
+        $("aiStatus").textContent = `模型 ${ai.source === "model" ? `已运行 ${ai.model || ""}` : ai.status === "missing_api_key" ? "缺少 API Key" : "未运行"}`;
+      }
+
+      function renderCandidateRow(c, manualOps, dense) {
+        const { badges, isResolved } = renderCandidateActions(c, manualOps);
+        // AI 优先 / 规则草稿兜底；没有 aiClassMap 时（旧调用点）退化为草稿
+        const cls = classifyCandidate(c, state.aiClassMap || new Map());
+        const isAi = cls.source === "ai";
+        const cat = cls.categoryName || "";
+        const pri = cls.priority || "";
+        const catBadgeCls = isAi ? "ai" : "draft";
+        const priBadgeCls = isAi ? "ai" : "draft";
+        return `<div class="candidate-row" data-issue-id="${escapeHtml(c.issueId)}">
+          <div class="row">
+            <div class="chips">
+              <span class="badge warn">${escapeHtml(c.issueId)}</span>
+              <span class="badge">${escapeHtml(timeText(c.questionTime))}</span>
+              ${cat ? `<span class="badge ${catBadgeCls}">${isAi ? "复核 " : ""}${escapeHtml(cat)}</span>` : ""}
+              ${pri ? `<span class="badge ${priBadgeCls}">${escapeHtml(pri)}</span>` : ""}
+            </div>
+            <div class="chips">${badges}</div>
+          </div>
+          <div class="text">${escapeHtml(c.text || "")}</div>
+          <div class="row-meta"><span>${escapeHtml(c.groupName || "")}</span><span>提问人 ${escapeHtml(c.askerName || "")}</span><span>${fmt.format((c.messages || []).length)} 条上下文</span></div>
+          <div class="candidate-actions">
+            <button class="action-btn" data-action="${isResolved ? "reopen" : "resolved"}" data-id="${escapeHtml(c.issueId)}">${isResolved ? "撤销已解决" : "标记已解决"}</button>
+            <button class="action-btn" data-action="assign" data-id="${escapeHtml(c.issueId)}">${manualOps[c.issueId]?.assignedTo === "ops" ? "已在排班" : "转排班"}</button>
+            <button class="action-btn" data-action="toggle-thread" data-id="${escapeHtml(c.issueId)}">展开回复链路</button>
+          </div>
+          <div class="candidate-thread" id="thread-${escapeHtml(c.issueId)}" style="display:none;"></div>
+        </div>`;
+      }
+
+      function bindCandidateActions() {
+        document.querySelectorAll(".candidate-row [data-action]").forEach((btn) => {
+          btn.onclick = async (e) => {
+            e.preventDefault();
+            const action = btn.dataset.action;
+            const id = btn.dataset.id;
+            if (action === "resolved" || action === "reopen") {
+              await postJson("/api/manual-ops", { id, status: action === "resolved" ? "resolved" : "reopened" });
+              await reloadManualOps();
+              renderAi();
+            } else if (action === "assign") {
+              const cur = (state.manualOps || {})[id];
+              const target = cur?.assignedTo === "ops" ? "" : "ops";
+              await postJson("/api/manual-ops", { id, assignedTo: target });
+              await reloadManualOps();
+              renderAi();
+            } else if (action === "toggle-thread") {
+              const el = document.getElementById(`thread-${id}`);
+              if (!el) return;
+              if (el.style.display !== "none") {
+                el.style.display = "none";
+                btn.textContent = "展开回复链路";
+                return;
+              }
+              const m = projectMetrics();
+              const candidates = m.analysisCandidates || [];
+              const cand = candidates.find((c) => c.issueId === id);
+              if (cand) {
+                el.innerHTML = (cand.messages || []).map((message) => renderChatMessage(message)).join("") || `<div class="empty">暂无上下文</div>`;
+                el.style.display = "block";
+                btn.textContent = "收起回复链路";
+              }
+            }
+          };
+        });
+      }
+
+      async function reloadManualOps() {
+        try {
+          const res = await fetch("/api/manual-ops");
+          const json = await res.json();
+          if (json.ok) state.manualOps = json.ops || {};
+        } catch (e) {
+          console.error("reloadManualOps failed", e);
+        }
+      }
+
+      async function reloadAiStatus() {
+        try {
+          const res = await fetch("/api/ai/status");
+          const json = await res.json();
+          if (json.ok) state.aiStatus = json;
+        } catch (e) {
+          console.error("reloadAiStatus failed", e);
+        }
+      }
+
+      function renderActiveSection() {
+        if (state.tab === "messages") renderMessages();
+        if (state.tab === "staffing") renderStaffing();
+        if (state.tab === "staff") renderStaff();
+        if (state.tab === "ai") renderAi();
+      }
+
+      function renderAll() {
+        renderPeriods();
+        renderProjects();
+        renderStorageStatus();
+        renderKpis();
+        renderOverview();
+        renderActiveSection();
+        scheduleDynamicMetricsRefresh();
+      }
+
+      function activateTab(tab) {
+        state.tab = tab;
+        document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("active", item.dataset.tab === tab));
+        document.querySelectorAll(".section").forEach((section) => section.classList.toggle("active", section.id === tab));
+        renderActiveSection();
+      }
+
+      let activeTipTarget = null;
+
+      function globalTooltip() {
+        let el = document.getElementById("globalTooltip");
+        if (!el) {
+          el = document.createElement("div");
+          el.id = "globalTooltip";
+          el.className = "global-tooltip";
+          el.setAttribute("role", "tooltip");
+          document.body.appendChild(el);
+        }
+        return el;
+      }
+
+      function positionGlobalTooltip(target) {
+        const el = globalTooltip();
+        if (!target || !document.contains(target)) {
+          hideGlobalTooltip();
+          return;
+        }
+        const text = String(target.getAttribute("data-tip") || "").trim();
+        if (!text) {
+          hideGlobalTooltip();
+          return;
+        }
+        el.textContent = text;
+        el.classList.add("is-visible");
+        const rect = target.getBoundingClientRect();
+        const tipRect = el.getBoundingClientRect();
+        const gap = 8;
+        const margin = 12;
+        let left = rect.left + rect.width / 2 - tipRect.width / 2;
+        left = Math.max(margin, Math.min(left, window.innerWidth - tipRect.width - margin));
+        let top = rect.top - tipRect.height - gap;
+        if (top < margin) top = rect.bottom + gap;
+        top = Math.max(margin, Math.min(top, window.innerHeight - tipRect.height - margin));
+        el.style.left = `${Math.round(left)}px`;
+        el.style.top = `${Math.round(top)}px`;
+      }
+
+      function showGlobalTooltip(target) {
+        const tipTarget = target?.closest?.("[data-tip]");
+        if (!tipTarget) return;
+        activeTipTarget = tipTarget;
+        positionGlobalTooltip(tipTarget);
+      }
+
+      function hideGlobalTooltip(target = null) {
+        if (target && activeTipTarget && target !== activeTipTarget) return;
+        activeTipTarget = null;
+        const el = document.getElementById("globalTooltip");
+        if (el) el.classList.remove("is-visible");
+      }
+
+      document.addEventListener("mouseover", (event) => showGlobalTooltip(event.target));
+      document.addEventListener("focusin", (event) => showGlobalTooltip(event.target));
+      document.addEventListener("mouseout", (event) => {
+        const target = event.target.closest?.("[data-tip]");
+        if (!target) return;
+        if (event.relatedTarget && target.contains(event.relatedTarget)) return;
+        hideGlobalTooltip(target);
+      });
+      document.addEventListener("focusout", (event) => hideGlobalTooltip(event.target.closest?.("[data-tip]")));
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") hideGlobalTooltip();
+      });
+      window.addEventListener("scroll", () => activeTipTarget && positionGlobalTooltip(activeTipTarget), true);
+      window.addEventListener("resize", () => activeTipTarget && positionGlobalTooltip(activeTipTarget));
+
+      document.querySelectorAll(".tab").forEach((button) => {
+        button.addEventListener("click", () => {
+          activateTab(button.dataset.tab);
+        });
+      });
+
+      $("staffSearch").addEventListener("input", (event) => {
+        state.staffSearch = event.target.value.trim();
+        renderStaff();
+      });
+
+      $("runAiButton").addEventListener("click", runAiAnalysis);
+      $("refreshButton").addEventListener("click", refreshIncremental);
+      $("refreshGroupsButton").addEventListener("click", refreshIncremental);
+      $("resolvePeopleButton").addEventListener("click", resolvePeopleFromApi);
+      $("addManualPersonButton").addEventListener("click", addInternalPersonFromForm);
+      document.addEventListener("click", async (event) => {
+        const clearSource = event.target.closest("[data-clear-source]");
+        if (clearSource) {
+          clearMessageSource();
+          return;
+        }
+        const staffSource = event.target.closest("[data-staff-source]");
+        if (staffSource) {
+          await openMessageSource({
+            senderId: staffSource.dataset.sourceSender || "",
+            chatId: staffSource.dataset.sourceChat || "",
+            messageId: staffSource.dataset.sourceMessage || "",
+            label: staffSource.dataset.sourceLabel || "人员消息溯源"
+          });
+          return;
+        }
+        const messageLoad = event.target.closest("[data-message-load]");
+        if (messageLoad) {
+          const mode = messageLoad.dataset.messageLoad;
+          if (mode === "all") state.messageVisibleCount = Number.MAX_SAFE_INTEGER;
+          else state.messageVisibleCount = Math.min(Number.MAX_SAFE_INTEGER, (state.messageVisibleCount || 300) + 500);
+          renderMessages();
+          return;
+        }
+        const staffingCell = event.target.closest("[data-staffing-slot]");
+        if (staffingCell) {
+          state.selectedStaffingSlot = staffingCell.dataset.staffingSlot || "";
+          renderStaffingHeatmap();
+          renderStaffingDetail();
+          return;
+        }
+        const selectButton = event.target.closest("[data-select-staff]");
+        if (selectButton) {
+          state.selectedStaffId = selectButton.dataset.selectStaff || "";
+          renderStaff();
+          return;
+        }
+        const removeButton = event.target.closest("[data-remove-internal]");
+        if (removeButton) {
+          await removeInternalPerson(removeButton.dataset.personId || "", removeButton);
+          return;
+        }
+        const addButton = event.target.closest("[data-add-internal]");
+        if (addButton) {
+          const id = addButton.dataset.personId || "";
+          let name = addButton.dataset.personName || "";
+          if (!name) {
+            name = window.prompt("请输入这个人的姓名，确认后会保存为运营身份。", "")?.trim() || "";
+            if (!name) {
+              $("manualPersonId").value = id;
+              $("manualPersonName").focus();
+              $("status").textContent = "请输入姓名";
+              return;
+            }
+          }
+          await addInternalPerson({ id, name, role: "operator" }, addButton);
+        }
+      });
+
+      async function loadJson(url, fallback) {
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) return fallback;
+        return response.json();
+      }
+
+      async function main() {
+        state.dashboard = await loadJson("/data/dashboard/dashboard.json", null);
+        state.ai = await loadJson("/data/dashboard/ai-insights.json", null);
+        if (!state.dashboard) {
+          $("status").textContent = "未生成数据";
+          return;
+        }
+        $("status").textContent = "已连接";
+        state.projectId = activeProject()?.projectId || "";
+        $("generatedAt").textContent = `生成时间 ${timeText(state.dashboard.generatedAt)}`;
+        $("archiveDir").textContent = `数据目录 ${state.dashboard.archiveDir}`;
+        renderAll();
+        await Promise.all([mergeProjectsFromApi(), refreshStorageStatusFromApi()]);
+        renderAll();
+      }
+
+      main().catch((error) => {
+        $("status").textContent = "读取失败";
+        console.error(error);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+[
+  {
+    "eventId": "EV-20260507-001",
+    "projectId": "project-a",
+    "projectName": "测试项目 A",
+    "eventType": "recruiting_start",
+    "eventName": "招募开始",
+    "eventTime": "2026-05-07 09:00",
+    "impactWindowHours": 48,
+    "owner": "项目PM",
+    "note": "用于观察入项、报名、测试、入口问题是否升高"
+  },
+  {
+    "eventId": "EV-20260507-002",
+    "projectId": "project-a",
+    "eventType": "task_release",
+    "eventName": "任务放量",
+    "eventTime": "2026-05-07 14:00",
+    "impactWindowHours": 24,
+    "owner": "运营负责人",
+    "note": "用于观察任务领取、操作、规则理解问题是否升高"
+  }
+]
